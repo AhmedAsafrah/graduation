@@ -10,7 +10,6 @@ exports.createStudent = async (req, res) => {
     phoneNumber,
     college,
   });
-
   try {
     const savedStudent = await student.save();
     res.status(201).json({
