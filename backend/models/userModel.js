@@ -1,10 +1,14 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true
+    },
     password: { type: String, required: true },
     profilePicture: { type: String, default: "default.jpg" },
     role: {
@@ -18,13 +22,19 @@ const userSchema = new mongoose.Schema(
         return this.role === "student" || this.role === "club_responsible";
       },
     },
+    managedClub: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Club',
+      required: function () {
+        return this.role === "club_responsible";
+      },
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);

@@ -5,7 +5,7 @@ const morgan = require("morgan");
 dotenv.config();
 
 const dbConnection = require("./config/database");
-const studentRoute = require("./routes/studentRoute");
+// const studentRoute = require("./routes/studentRoute");
 
 
 //connect to Database
@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // Mounting Routes
-app.use("/api/students", studentRoute);
+// app.use("/api/students", studentRoute);
 
 
 const PORT = process.env.PORT || 8000;
