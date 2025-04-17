@@ -1,13 +1,18 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema(
   {
-    content: { type: String, required: true },
-    authorEmail: { type: String, required: true },
-    date: { type: Date, required: true },
+    content: { type: String, required: [true, "Content is required"] },
+    author: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: [true, "Author is required"] 
+    },
     image: { type: String, required: false },
-    clubName: { type: String },
-    likes: { type: Number, default: 0 },
+    club: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Club' 
+    },
   },
   {
     timestamps: true,
