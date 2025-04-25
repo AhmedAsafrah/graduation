@@ -1,56 +1,72 @@
-const { body } = require('express-validator');
-const mongoose = require('mongoose');
+const validatorMiddleware = require("../middleware/validatorMiddleware");
+const mongoose = require("mongoose");
+const { body, param } = require("express-validator");
 
-const registrationValidator = [
-  body('student')
+exports.createRegistrationValidator = [
+  body("club")
     .notEmpty()
-    .withMessage('Student is required')
+    .withMessage("Club is required")
     .isMongoId()
-    .withMessage('Student must be a valid ObjectId')
-    .custom(async (student) => {
-      const user = await mongoose.model('User').findById(student);
-      if (!user) {
-        throw new Error('Student does not exist');
+    .withMessage("Club ID must be a valid Mongo ID")
+    .custom(async (val) => {
+      try {
+        const club = await mongoose.model("Club").findById(val);
+        if (!club) {
+          throw new Error("Club not found");
+        }
+        return true;
+      } catch (error) {
+        console.error("Error in club validation:", error);
+        throw new Error("Error validating club");
       }
-      if (user.role === 'system_responsible') {
-        throw new Error('System responsible cannot register');
-      }
-      return true;
     }),
-  body('club')
-    .optional()
-    .isMongoId()
-    .withMessage('Club must be a valid ObjectId')
-    .custom(async (club, { req }) => {
-      if (!club) return true;
-      const clubDoc = await mongoose.model('Club').findById(club);
-      if (!clubDoc) {
-        throw new Error('Club does not exist');
+  // Validate that a club_responsible user has a valid managedClub
+  body().custom(async (val, { req }) => {
+    if (req.user.role === "club_responsible") {
+      if (!req.user.managedClub) {
+        throw new Error("Club responsible user must have a managed club assigned");
       }
-      return true;
-    }),
-  body('event')
-    .optional()
-    .isMongoId()
-    .withMessage('Event must be a valid ObjectId')
-    .custom(async (event, { req }) => {
-      if (!event) return true;
-      const eventDoc = await mongoose.model('Event').findById(event);
-      if (!eventDoc) {
-        throw new Error('Event does not exist');
+      try {
+        const managedClub = await mongoose.model("Club").findById(req.user.managedClub);
+        if (!managedClub) {
+          throw new Error("The club you manage does not exist");
+        }
+      } catch (error) {
+        console.error("Error validating managedClub:", error);
+        throw new Error("Error validating managed club");
       }
-      return true;
-    }),
-  body('status')
-    .isIn(['pending', 'approved'])
-    .withMessage('Status must be either pending or approved'),
-  body()
-    .custom((value, { req }) => {
-      if (!req.body.club && !req.body.event) {
-        throw new Error('Either club or event must be provided');
-      }
-      return true;
-    }),
+    }
+    return true;
+  }),
+  validatorMiddleware,
 ];
 
-module.exports = registrationValidator;
+exports.updateRegistrationValidator = [
+  param("id")
+    .isMongoId()
+    .withMessage("Registration ID must be a valid Mongo ID"),
+  body("status")
+    .notEmpty()
+    .withMessage("Status is required")
+    .isIn(["pending", "approved"])
+    .withMessage("Status must be either 'pending' or 'approved'"),
+  // Validate that a club_responsible user has a valid managedClub
+  body().custom(async (val, { req }) => {
+    if (req.user.role === "club_responsible") {
+      if (!req.user.managedClub) {
+        throw new Error("Club responsible user must have a managed club assigned");
+      }
+      try {
+        const managedClub = await mongoose.model("Club").findById(req.user.managedClub);
+        if (!managedClub) {
+          throw new Error("The club you manage does not exist");
+        }
+      } catch (error) {
+        console.error("Error validating managedClub:", error);
+        throw new Error("Error validating managed club");
+      }
+    }
+    return true;
+  }),
+  validatorMiddleware,
+];

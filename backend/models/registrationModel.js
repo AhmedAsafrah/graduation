@@ -9,25 +9,18 @@ const registrationSchema = new mongoose.Schema(
     },
     club: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Club' 
+      ref: 'Club',
+      required: [true, "Club is required"]
     },
-    event: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Event' 
+    status: { 
+      type: String, 
+      enum: ["pending", "approved"], 
+      default: "pending" 
     },
-    status: { type: String, enum: ["pending", "approved"], default: "pending" },
   },
   {
     timestamps: true,
   }
 );
-
-// Ensure at least one of club or event is provided
-registrationSchema.pre('save', function (next) {
-  if (!this.club && !this.event) {
-    return next(new Error('Either club or event must be provided'));
-  }
-  next();
-});
 
 module.exports = mongoose.model("Registration", registrationSchema);
