@@ -1,0 +1,92 @@
+const RegistrationModel = require("../models/registrationModel");
+const ClubModel = require("../models/clubModel");
+const AppError = require("../utils/appError");
+const factory = require("./handlersFactory");
+
+exports.createRegistration = async (req, res, next) => {
+  try {
+    const { student, club } = req.body;
+
+    // Check if the student is already registered for this club
+    const existingRegistration = await RegistrationModel.findOne({
+      student,
+      club,
+    });
+
+    if (existingRegistration) {
+      return next(
+        new AppError("You have already registered for this club", 400)
+      );
+    }
+
+    // If the user is a club_responsible, ensure they aren't registering for their own club
+    const user = req.user;
+    if (user.role === "club_responsible" && user.managedClub.toString() === club) {
+      return next(
+        new AppError("You cannot register for a club you manage", 400)
+      );
+    }
+
+    const registration = await RegistrationModel.create({
+      student,
+      club,
+      status: "pending",
+    });
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        registration,
+      },
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+};
+
+exports.approveRegistration = async (req, res, next) => {
+  try {
+    const registrationId = req.params.id;
+    const { status } = req.body;
+
+    const registration = await RegistrationModel.findById(registrationId);
+    if (!registration) {
+      return next(new AppError("Registration not found", 404));
+    }
+
+    // Find the club associated with the registration
+    const club = await ClubModel.findById(registration.club);
+    if (!club) {
+      return next(new AppError("Club not found", 404));
+    }
+
+    // Check if the logged-in user is the club admin or system_responsible
+    const user = req.user;
+    const isClubAdmin = user.role === "club_responsible" && user.managedClub.toString() === registration.club.toString();
+    const isSystemResponsible = user.role === "system_responsible";
+
+    if (!isClubAdmin && !isSystemResponsible) {
+      return next(
+        new AppError(
+          "You are not authorized to approve this registration",
+          403
+        )
+      );
+    }
+
+    // Update the status
+    registration.status = status;
+    await registration.save();
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        registration,
+      },
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+};
+
+exports.getAllRegistrations = factory.getAll(RegistrationModel);

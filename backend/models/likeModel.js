@@ -15,6 +15,8 @@ const likeSchema = new mongoose.Schema(
     targetId: {
       type: mongoose.Schema.Types.ObjectId,
       required: [true, "Target ID is required"],
+      // Dynamically set the reference based on targetType
+      refPath: "targetType", // Will reference either "Event" or "Post" based on targetType
     },
   },
   {

@@ -1,37 +1,80 @@
-const { body } = require('express-validator');
-const mongoose = require('mongoose');
+const { check } = require("express-validator");
+const validatorMiddleware = require("../middleware/validatorMiddleware");
+const CommentModel = require("../models/commentModel");
+const mongoose = require("mongoose");
 
-const commentValidator = [
-  body('content')
-    .trim()
+exports.createCommentValidator = [
+  check("content")
     .notEmpty()
-    .withMessage('Content is required')
-    .isLength({ min: 1, max: 500 })
-    .withMessage('Content must be between 1 and 500 characters'),
-  body('author')
-    .notEmpty()
-    .withMessage('Author is required')
+    .withMessage("Content is required")
+    .isString()
+    .withMessage("Content must be a string")
+    .isLength({ min: 5 })
+    .withMessage("Content must be at least 5 characters"),
+  check("role")
+    .optional() // Make role optional
+    .isIn(["post", "event"])
+    .withMessage("Role must be either 'post' or 'event'"),
+  check("post")
+    .optional()
     .isMongoId()
-    .withMessage('Author must be a valid ObjectId')
-    .custom(async (author) => {
-      const user = await mongoose.model('User').findById(author);
-      if (!user) {
-        throw new Error('Author does not exist');
+    .withMessage("Invalid Post ID format")
+    .custom(async (val, { req }) => {
+      if (req.body.role === "post") {
+        const post = await mongoose.model("Post").findById(val);
+        if (!post) {
+          throw new Error("Post not found");
+        }
       }
-      return true;
     }),
-  body('post')
-    .notEmpty()
-    .withMessage('Post is required')
+  check("event")
+    .optional()
     .isMongoId()
-    .withMessage('Post must be a valid ObjectId')
-    .custom(async (post) => {
-      const postDoc = await mongoose.model('Post').findById(post);
-      if (!postDoc) {
-        throw new Error('Post does not exist');
+    .withMessage("Invalid Event ID format")
+    .custom(async (val, { req }) => {
+      if (req.body.role === "event") {
+        const event = await mongoose.model("Event").findById(val);
+        if (!event) {
+          throw new Error("Event not found");
+        }
       }
-      return true;
     }),
+  validatorMiddleware,
 ];
 
-module.exports = commentValidator;
+exports.getSpecificCommentValidator = [
+  check("id").isMongoId().withMessage("Invalid Comment ID format"),
+  validatorMiddleware,
+];
+
+exports.updateCommentValidator = [
+  check("id")
+    .isMongoId()
+    .withMessage("Invalid Comment ID format")
+    .custom(async (val, { req }) => {
+      const comment = await CommentModel.findById(val);
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+    }),
+  check("content")
+    .optional()
+    .isString()
+    .withMessage("Content must be a string")
+    .isLength({ min: 5 })
+    .withMessage("Content must be at least 5 characters"),
+  validatorMiddleware,
+];
+
+exports.deleteCommentValidator = [
+  check("id")
+    .isMongoId()
+    .withMessage("Invalid Comment ID format")
+    .custom(async (val, { req }) => {
+      const comment = await CommentModel.findById(val);
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+    }),
+  validatorMiddleware,
+];
