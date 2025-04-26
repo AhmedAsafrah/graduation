@@ -8,9 +8,16 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 
+// Signup controller (unchanged)
 exports.signup = asyncHandler(async (req, res, next) => {
-  // 1) Create the user
-  const newUser = await UserModel.create({
+  // 1) Check if a user with this email already exists
+  const existingUser = await UserModel.findOne({ email: req.body.email });
+  if (existingUser) {
+    return next(new AppError("A user with this email already exists", 400));
+  }
+
+  // 2) Create a temporary user document (not fully signed up yet)
+  const tempUser = new UserModel({
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
@@ -18,35 +25,153 @@ exports.signup = asyncHandler(async (req, res, next) => {
     college: req.body.college,
     managedClub: req.body.managedClub,
     profilePicture: req.body.profilePicture || "default.jpg",
+    emailVerified: false,
   });
 
-  // 2) Generate JWT token
-  const token = signToken(newUser._id);
+  // 3) Generate a 6-digit verification code
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+  const hashedVerificationCode = crypto
+    .createHash("sha256")
+    .update(verificationCode)
+    .digest("hex");
 
-  // 3) Respond with the new user and token
+  tempUser.emailVerificationCode = hashedVerificationCode;
+  tempUser.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  await tempUser.save();
+
+  // 4) Send the verification code via email
+  const message = `Hi ${tempUser.name},\n 
+      Thank you for signing up with Club Hub PPU! Your email verification code is: ${verificationCode}. \n
+      Please use this code to verify your email and complete your signup.\n
+      If you didn’t request this, please ignore this email.`;
+
+  try {
+    await sendEmail({
+      email: tempUser.email,
+      subject: "Email Verification Code -- valid for 10 minutes",
+      message,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "A verification code has been sent to your email.",
+    });
+  } catch (error) {
+    // If email sending fails, delete the temporary user
+    await UserModel.deleteOne({ _id: tempUser._id });
+    return next(
+      new AppError(
+        "There was an error sending the verification email. Try again later.",
+        500
+      )
+    );
+  }
+});
+
+// Updated verifyEmailCode controller to complete signup
+exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
+  // 1) Hash the provided verification code
+  const hashedVerificationCode = crypto
+    .createHash("sha256")
+    .update(req.body.verificationCode)
+    .digest("hex");
+
+  // 2) Find the user with the matching code and non-expired verification
+  const user = await UserModel.findOne({
+    email: req.body.email,
+    emailVerificationCode: hashedVerificationCode,
+    emailVerificationExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new AppError("Invalid or expired verification code", 400));
+  }
+
+  // 3) Mark the email as verified and complete signup
+  user.emailVerified = true;
+  user.emailVerificationCode = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+
+  // 4) Generate JWT token and send response
+  const token = signToken(user._id);
+
   res.status(201).json({
     status: "success",
+    message: "Email verified and signup completed!",
     data: {
-      user: newUser,
+      user,
     },
     token,
   });
 });
 
+// Login controller (unchanged)
 exports.login = asyncHandler(async (req, res, next) => {
   // 1) Check if user exists and password is correct
   const user = await UserModel.findOne({ email: req.body.email }).select(
     "+password"
   );
 
-  if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
+  if (!user) {
     return next(new AppError("Incorrect email or password", 401));
   }
 
-  // 2) Generate JWT token
+  // 2) Check if email is verified
+  if (!user.emailVerified) {
+    return next(
+      new AppError("Please verify your email before logging in.", 403)
+    );
+  }
+
+  // 3) Verify password
+  if (!(await bcrypt.compare(req.body.password, user.password))) {
+    return next(new AppError("Incorrect email or password", 401));
+  }
+
+  // 4) Generate JWT token
   const token = signToken(user._id);
 
-  // 3) Send response
+  // 5) Send response
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+    token,
+  });
+});
+
+// Modified login controller to require email verification
+exports.login = asyncHandler(async (req, res, next) => {
+  // 1) Check if user exists and password is correct
+  const user = await UserModel.findOne({ email: req.body.email }).select(
+    "+password"
+  );
+
+  if (!user) {
+    return next(new AppError("Incorrect email or password", 401));
+  }
+
+  // 2) Check if email is verified
+  if (!user.emailVerified) {
+    return next(
+      new AppError("Please verify your email before logging in.", 403)
+    );
+  }
+
+  // 3) Verify password
+  if (!(await bcrypt.compare(req.body.password, user.password))) {
+    return next(new AppError("Incorrect email or password", 401));
+  }
+
+  // 4) Generate JWT token
+  const token = signToken(user._id);
+
+  // 5) Send response
   res.status(200).json({
     status: "success",
     data: {
