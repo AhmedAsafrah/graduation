@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
+
 const authService = require("../services/authService");
+
 const {
   restrictToClubManager,
 } = require("../middleware/restrictResourceMiddleware");
+
 const ClubModel = require("../models/clubModel");
 
 const {
@@ -30,6 +33,8 @@ router.post(
   createClubValidator,
   createClub
 );
+
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get("/", getAllClubs);
 

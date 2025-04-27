@@ -1,10 +1,13 @@
 const express = require("express");
 const router = express.Router();
+
 const authService = require("../services/authService");
+const UserModel = require("../models/userModel");
+const { protect, allowedTo } = authService;
+
 const {
   restrictToResourceOwner,
 } = require("../middleware/restrictResourceMiddleware");
-const UserModel = require("../models/userModel");
 
 const {
   createUser,
@@ -23,7 +26,7 @@ const {
   changeUserPasswordValidator,
 } = require("../validators/userValidator");
 
-const { protect, allowedTo } = authService;
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.post(
   "/",

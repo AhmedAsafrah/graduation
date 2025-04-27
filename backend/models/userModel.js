@@ -10,9 +10,9 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
 
-    emailVerificationCode: { type: String }, 
-    emailVerificationExpires: { type: Date }, 
-    emailVerified: { type: Boolean, default: false }, 
+    emailVerificationCode: { type: String },
+    emailVerificationExpires: { type: Date },
+    emailVerified: { type: Boolean, default: false },
 
     password: { type: String, required: true },
     passwordChangedAt: { type: Date },
@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
         return this.role === "student" || this.role === "club_responsible";
       },
     },
-    
+
     managedClub: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Club",
@@ -43,7 +43,6 @@ const userSchema = new mongoose.Schema(
         return this.role === "club_responsible";
       },
     },
-
   },
   {
     timestamps: true,

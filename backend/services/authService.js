@@ -426,3 +426,123 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
     token,
   });
 });
+
+exports.getMe = asyncHandler(async (req, res, next) => {
+  // 1) User is already attached to req by the protect middleware
+  const user = await UserModel.findById(req.user._id).select("-password");
+
+  // 2) Send response
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+  });
+});
+
+exports.protect = asyncHandler(async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) {
+    return next(
+      new AppError("You are not logged in! Please log in to get access.", 401)
+    );
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+  const currentUser = await UserModel.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError("The user belonging to this token no longer exists.", 401)
+    );
+  }
+
+  if (currentUser.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      currentUser.passwordChangedAt.getTime() / 1000,
+      10
+    );
+    if (decoded.iat < changedTimestamp) {
+      return next(
+        new AppError(
+          "User recently changed password! Please log in again.",
+          401
+        )
+      );
+    }
+  }
+
+  req.user = currentUser;
+  next();
+});
+
+exports.changePassword = asyncHandler(async (req, res, next) => {
+  // 1) Get the user from req.user (set by protect middleware)
+  const user = await UserModel.findById(req.user._id).select("+password");
+
+  // 2) Verify the current password
+  if (!(await bcrypt.compare(req.body.currentPassword, user.password))) {
+    return next(new AppError("Your current password is incorrect.", 401));
+  }
+
+  // 3) Hash the new password
+  user.password = req.body.newPassword;
+  user.passwordChangedAt = Date.now();
+
+  // 4) Save the updated user (pre-save hook will hash the password)
+  await user.save();
+
+  // 5) Generate a new token (since the old one will be invalid due to passwordChangedAt)
+  const token = signToken(user._id);
+
+  // 6) Send response
+  res.status(200).json({
+    status: "success",
+    message:
+      "Password changed successfully! Please use the new token to continue.",
+    token,
+  });
+});
+
+exports.updateMe = asyncHandler(async (req, res, next) => {
+    if (req.body.password || req.body.email) {
+      return next(
+        new AppError(
+          "This route is not for password or email updates. Use /changePassword for password updates.",
+          400
+        )
+      );
+    }
+  
+    const filteredBody = {};
+    if (req.body.name) filteredBody.name = req.body.name;
+    if (req.body.college) filteredBody.college = req.body.college;
+    if (req.body.profilePicture) filteredBody.profilePicture = req.body.profilePicture;
+    if (req.body.managedClub) filteredBody.managedClub = req.body.managedClub;
+  
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      filteredBody,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+  
+    const token = signToken(updatedUser._id);
+  
+    res.status(200).json({
+      status: "success",
+      message: "User data updated successfully!",
+      data: {
+        user: updatedUser,
+      },
+      token,
+    });
+  });
