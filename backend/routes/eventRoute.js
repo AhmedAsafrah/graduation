@@ -1,10 +1,14 @@
 const express = require("express");
 const router = express.Router();
+
 const authService = require("../services/authService");
 const EventModel = require("../models/eventModel");
 const { createComment } = require("../services/commentService");
 const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
+const { createCommentValidator } = require("../validators/commentValidator");
+const { protect, allowedTo } = authService;
+
 const {
   createEvent,
   getAllEvents,
@@ -20,11 +24,7 @@ const {
   deleteEventValidator,
 } = require("../validators/eventValidator");
 
-const { createCommentValidator } = require("../validators/commentValidator");
-
-const AppError = require("../utils/appError");
-
-const { protect, allowedTo } = authService;
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.post(
   "/",

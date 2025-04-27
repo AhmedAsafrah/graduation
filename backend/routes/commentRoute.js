@@ -2,20 +2,25 @@ const express = require("express");
 const router = express.Router();
 const authService = require("../services/authService");
 const CommentModel = require("../models/commentModel");
+
 const {
   getAllComments,
   getComment,
   updateComment,
   deleteComment,
 } = require("../services/commentService");
-const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
+
 const {
-  getSpecificCommentValidator,
-  updateCommentValidator,
-  deleteCommentValidator,
+    getSpecificCommentValidator,
+    updateCommentValidator,
+    deleteCommentValidator,
 } = require("../validators/commentValidator");
 
+const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
+
 const { protect, allowedTo } = authService;
+
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get("/", getAllComments);
 

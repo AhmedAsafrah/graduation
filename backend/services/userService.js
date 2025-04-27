@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const UserModel = require("../models/userModel");
 const factory = require("./handlersFactory");
 const bcrypt = require("bcrypt");
+
 exports.createUser = factory.createOne(UserModel);
 
 exports.updateUser = asyncHandler(async (req, res, next) => {
@@ -68,3 +69,4 @@ exports.deleteUser = factory.deleteOne(UserModel);
 exports.getUser = factory.getOne(UserModel);
 
 exports.getAllUsers = factory.getAll(UserModel);
+

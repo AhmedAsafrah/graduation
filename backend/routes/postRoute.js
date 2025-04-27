@@ -3,14 +3,20 @@ const router = express.Router();
 const authService = require("../services/authService");
 const PostModel = require("../models/postModel");
 const { createComment } = require("../services/commentService");
-const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
+const {
+  restrictToResourceOwner,
+} = require("../middleware/restrictResourceMiddleware");
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
+const { createCommentValidator } = require("../validators/commentValidator");
+const { protect, allowedTo } = authService;
+
 const {
   createPost,
   getAllPosts,
   getPost,
   updatePost,
   deletePost,
+  getPostEngagement,
 } = require("../services/postService");
 
 const {
@@ -20,9 +26,7 @@ const {
   deletePostValidator,
 } = require("../validators/postValidator");
 
-const { createCommentValidator } = require("../validators/commentValidator");
-
-const { protect, allowedTo } = authService;
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.post(
   "/",
@@ -83,7 +87,7 @@ router.post(
 router.put(
   "/:id",
   protect,
-  allowedTo("student","club_responsible", "system_responsible"),
+  allowedTo("student", "club_responsible", "system_responsible"),
   restrictToResourceOwner(PostModel, "author"),
   updatePostValidator,
   updatePost
@@ -96,6 +100,13 @@ router.delete(
   restrictToResourceOwner(PostModel, "author"),
   deletePostValidator,
   deletePost
+);
+
+router.get(
+  "/:id/engagement",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getPostEngagement
 );
 
 module.exports = router;

@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const authService = require("../services/authService");
+
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
-
 const { getAllLikes, toggleLike } = require("../services/likeService");
-
 const { createLikeValidator } = require("../validators/likeValidator");
-
 const { protect, allowedTo } = authService;
+
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get("/", getAllLikes);
 

@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
+
 const authService = require("../services/authService");
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
+const { protect, allowedTo } = authService;
 
 const {
   createRegistration,
@@ -14,7 +16,7 @@ const {
   updateRegistrationValidator,
 } = require("../validators/registrationValidator");
 
-const { protect, allowedTo } = authService;
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.post(
   "/",
