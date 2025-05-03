@@ -17,6 +17,7 @@ const {
   updatePost,
   deletePost,
   getPostEngagement,
+  getPostsByClub,
 } = require("../services/postService");
 
 const {
@@ -25,6 +26,7 @@ const {
   updatePostValidator,
   deletePostValidator,
 } = require("../validators/postValidator");
+const { getPostsByClubValidator } = require("../validators/clubValidator");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
@@ -107,6 +109,14 @@ router.get(
   protect,
   allowedTo("student", "club_responsible", "system_responsible"),
   getPostEngagement
+);
+
+router.get(
+  "/club/:clubId",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getPostsByClubValidator,
+  getPostsByClub
 );
 
 module.exports = router;

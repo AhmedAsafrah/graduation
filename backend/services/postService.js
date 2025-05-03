@@ -27,7 +27,9 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
   const numLikes = post.likes.length;
 
   // 3) Get the number of comments (count documents in the Comment model)
-  const numComments = await CommentModel.countDocuments({ post: req.params.id });
+  const numComments = await CommentModel.countDocuments({
+    post: req.params.id,
+  });
 
   // 4) Send response
   res.status(200).json({
@@ -37,5 +39,17 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
       likes: numLikes,
       comments: numComments,
     },
+  });
+});
+
+exports.getPostsByClub = asyncHandler(async (req, res, next) => {
+  const { clubId } = req.params;
+
+  // Fetch all posts associated with the specified club
+  const posts = await PostModel.find({ club: clubId });
+
+  res.status(200).json({
+    status: "success",
+    data: posts,
   });
 });

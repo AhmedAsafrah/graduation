@@ -136,3 +136,17 @@ exports.deleteEventValidator = [
     }),
   validatorMiddleware,
 ];
+
+exports.getEventsByClubValidator = [
+  check("clubId")
+    .isMongoId()
+    .withMessage("Invalid Club ID format")
+    .custom(async (val) => {
+      const club = await mongoose.model("Club").findById(val);
+      if (!club) {
+        throw new Error("Club not found");
+      }
+      return true;
+    }),
+  validatorMiddleware,
+];
