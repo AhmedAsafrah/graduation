@@ -15,6 +15,9 @@ const {
   getClub,
   updateClub,
   deleteClub,
+  getUnregisteredClubs,
+  getJoinedClubs,
+  getNotJoinedClubs,
 } = require("../services/clubService");
 
 const {
@@ -23,6 +26,7 @@ const {
   updateClubValidator,
   deleteClubValidator,
 } = require("../validators/clubValidator");
+
 
 const { protect, allowedTo } = authService;
 
@@ -37,6 +41,29 @@ router.post(
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get("/", getAllClubs);
+
+router.get(
+  "/unregistered",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getUnregisteredClubs
+);
+
+router.get(
+  "/joined",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getJoinedClubs
+);
+
+router.get(
+  "/not-joined",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getNotJoinedClubs
+);
+
+
 
 router.get("/:id", getSpecificClubValidator, getClub);
 
@@ -56,5 +83,6 @@ router.delete(
   deleteClubValidator,
   deleteClub
 );
+
 
 module.exports = router;

@@ -4,7 +4,9 @@ const router = express.Router();
 const authService = require("../services/authService");
 const EventModel = require("../models/eventModel");
 const { createComment } = require("../services/commentService");
-const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
+const {
+  restrictToResourceOwner,
+} = require("../middleware/restrictResourceMiddleware");
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
 const { createCommentValidator } = require("../validators/commentValidator");
 const { protect, allowedTo } = authService;
@@ -15,6 +17,8 @@ const {
   getEvent,
   updateEvent,
   deleteEvent,
+  getEventsByClub,
+  getComingSoonEvents,
 } = require("../services/eventService");
 
 const {
@@ -22,9 +26,17 @@ const {
   getSpecificEventValidator,
   updateEventValidator,
   deleteEventValidator,
+  getEventsByClubValidator,
 } = require("../validators/eventValidator");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
+
+router.get(
+  "/coming-soon",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getComingSoonEvents
+);
 
 router.post(
   "/",
@@ -95,6 +107,14 @@ router.delete(
   restrictToResourceOwner(EventModel, "author"),
   deleteEventValidator,
   deleteEvent
+);
+
+router.get(
+  "/club/:clubId",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getEventsByClubValidator,
+  getEventsByClub
 );
 
 module.exports = router;

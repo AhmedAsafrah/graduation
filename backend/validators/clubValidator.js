@@ -1,6 +1,7 @@
 const { check } = require("express-validator");
 const validatorMiddleware = require("../middleware/validatorMiddleware");
 const ClubModel = require("../models/clubModel");
+const { default: mongoose } = require("mongoose");
 
 exports.createClubValidator = [
   check("name")
@@ -118,5 +119,19 @@ exports.deleteClubValidator = [
   //   }
   //   return true;
   // }),
+  validatorMiddleware,
+];
+
+exports.getPostsByClubValidator = [
+  check("clubId")
+    .isMongoId()
+    .withMessage("Invalid Club ID format")
+    .custom(async (val) => {
+      const club = await mongoose.model("Club").findById(val);
+      if (!club) {
+        throw new Error("Club not found");
+      }
+      return true;
+    }),
   validatorMiddleware,
 ];
