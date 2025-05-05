@@ -25,16 +25,16 @@ exports.createClubValidator = [
     .withMessage("Description must be a string")
     .isLength({ min: 10 })
     .withMessage("Description must be at least 10 characters"),
-  check("profilePicture")
-    .notEmpty()
-    .withMessage("Profile picture is required")
-    .isString()
-    .withMessage("Profile picture must be a string"),
-  check("coverPicture")
-    .notEmpty()
-    .withMessage("Cover picture is required")
-    .isString()
-    .withMessage("Cover picture must be a string"),
+  // check("profilePicture")
+  //   .notEmpty()
+  //   .withMessage("Profile picture is required")
+  //   .isString()
+  //   .withMessage("Profile picture must be a string"),
+  // check("coverPicture")
+  //   .notEmpty()
+  //   .withMessage("Cover picture is required")
+  //   .isString()
+  //   .withMessage("Cover picture must be a string"),
   check("college")
     .notEmpty()
     .withMessage("College is required")

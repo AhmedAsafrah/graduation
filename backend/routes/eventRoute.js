@@ -29,6 +29,9 @@ const {
   getEventsByClubValidator,
 } = require("../validators/eventValidator");
 
+const upload = require("../utils/multerConfig");
+const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
+
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get(
@@ -42,6 +45,8 @@ router.post(
   "/",
   protect,
   allowedTo("club_responsible", "system_responsible"),
+  setUploadFolder("events"),
+  upload.fields([{ name: "image", maxCount: 1 }]),
   setAuthor,
   createEventValidator,
   createEvent
@@ -96,6 +101,8 @@ router.put(
   protect,
   allowedTo("club_responsible", "system_responsible"),
   restrictToResourceOwner(EventModel, "author"),
+  setUploadFolder("events"),
+  upload.fields([{ name: "image", maxCount: 1 }]),
   updateEventValidator,
   updateEvent
 );

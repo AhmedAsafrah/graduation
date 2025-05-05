@@ -8,6 +8,7 @@ const {
 } = require("../middleware/restrictResourceMiddleware");
 
 const ClubModel = require("../models/clubModel");
+const upload = require("../utils/multerConfig");
 
 const {
   createClub,
@@ -27,18 +28,23 @@ const {
   deleteClubValidator,
 } = require("../validators/clubValidator");
 
+const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
 
 const { protect, allowedTo } = authService;
 
+///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 router.post(
   "/",
   protect,
   allowedTo("system_responsible"),
+  setUploadFolder("clubs"),
+  upload.fields([
+    { name: "profilePicture", maxCount: 1 },
+    { name: "coverPicture", maxCount: 1 },
+  ]),
   createClubValidator,
   createClub
 );
-
-///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 router.get("/", getAllClubs);
 
@@ -63,16 +69,17 @@ router.get(
   getNotJoinedClubs
 );
 
-
-
 router.get("/:id", getSpecificClubValidator, getClub);
 
 router.put(
   "/:id",
   protect,
-  allowedTo("system_responsible", "club_responsible"),
-  restrictToClubManager(ClubModel),
-  updateClubValidator,
+  allowedTo("system_responsible"),
+  setUploadFolder("clubs"),
+  upload.fields([
+    { name: "profilePicture", maxCount: 1 },
+    { name: "coverPicture", maxCount: 1 },
+  ]),
   updateClub
 );
 
@@ -83,6 +90,5 @@ router.delete(
   deleteClubValidator,
   deleteClub
 );
-
 
 module.exports = router;
