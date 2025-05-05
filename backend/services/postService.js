@@ -4,11 +4,80 @@ const factory = require("./handlersFactory");
 const AppError = require("../utils/appError");
 const PostModel = require("../models/postModel");
 const CommentModel = require("../models/commentModel");
+const cloudinary = require("../utils/cloudinaryConfig");
 
-exports.createPost = factory.createOne(PostModel);
+exports.createPost = asyncHandler(async (req, res, next) => {
+  const { title, content, author, club } = req.body;
 
-exports.updatePost = factory.updateOne(PostModel);
+  const image = req.files?.image ? req.files.image[0].path : undefined;
 
+  const post = await PostModel.create({
+    title,
+    content,
+    author,
+    image,
+    club,
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: post,
+  });
+});
+
+exports.updatePost = asyncHandler(async (req, res, next) => {
+  const { title, content, author, club } = req.body;
+
+  // Fetch the existing post to get the old image URL
+  const post = await PostModel.findById(req.params.id);
+  if (!post) {
+    return next(new Error("No post found with that ID"));
+  }
+
+  // Prepare the update data
+  const updateData = { title, content, author, club };
+
+  // Handle image upload if present
+  if (req.files) {
+    // Function to extract public_id from Cloudinary URL
+    const getPublicIdFromUrl = (url) => {
+      if (!url) return null;
+      const parts = url.split("/");
+      const fileName = parts[parts.length - 1].split(".")[0];
+      const folder = parts[parts.length - 2];
+      return `${folder}/${fileName}`;
+    };
+
+    // Delete old image and upload new one
+    if (req.files.image && post.image) {
+      const oldImagePublicId = getPublicIdFromUrl(post.image);
+      if (oldImagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldImagePublicId);
+        } catch (error) {}
+      }
+      updateData.image = req.files.image[0].path;
+      const newImagePublicId = getPublicIdFromUrl(req.files.image[0].path);
+      if (newImagePublicId) {
+        try {
+          await cloudinary.api.resource(newImagePublicId, { invalidate: true });
+        } catch (error) {}
+      }
+    }
+  }
+
+  // Update the post with new data
+  const updatedPost = await PostModel.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({
+    status: "success",
+    data: updatedPost,
+  });
+});
 exports.deletePost = factory.deleteOne(PostModel);
 
 exports.getPost = factory.getOne(PostModel);

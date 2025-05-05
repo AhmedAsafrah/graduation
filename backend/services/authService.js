@@ -7,6 +7,7 @@ const AppError = require("../utils/appError");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
+const cloudinary = require("../utils/cloudinaryConfig");
 
 // Signup controller (unchanged)
 exports.signup = asyncHandler(async (req, res, next) => {
@@ -511,38 +512,77 @@ exports.changePassword = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateMe = asyncHandler(async (req, res, next) => {
-    if (req.body.password || req.body.email) {
-      return next(
-        new AppError(
-          "This route is not for password or email updates. Use /changePassword for password updates.",
-          400
-        )
-      );
-    }
-  
-    const filteredBody = {};
-    if (req.body.name) filteredBody.name = req.body.name;
-    if (req.body.college) filteredBody.college = req.body.college;
-    if (req.body.profilePicture) filteredBody.profilePicture = req.body.profilePicture;
-    if (req.body.managedClub) filteredBody.managedClub = req.body.managedClub;
-  
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      req.user._id,
-      filteredBody,
-      {
-        new: true,
-        runValidators: true,
+  if (req.body.password || req.body.email) {
+    return next(
+      new AppError(
+        "This route is not for password or email updates. Use /changePassword for password updates.",
+        400
+      )
+    );
+  }
+
+  const filteredBody = {};
+  if (req.body.name) filteredBody.name = req.body.name;
+  if (req.body.college) filteredBody.college = req.body.college;
+  if (req.body.managedClub) filteredBody.managedClub = req.body.managedClub;
+
+  // Handle profile picture upload if present
+  if (req.files && req.files.profilePicture) {
+    const getPublicIdFromUrl = (url) => {
+      if (!url) return null;
+      const parts = url.split("/");
+      const fileName = parts[parts.length - 1].split(".")[0];
+      const folder = parts[parts.length - 2];
+      return `${folder}/${fileName}`;
+    };
+
+    // Delete old profilePicture if it's not the default
+    if (req.user.profilePicture && req.user.profilePicture !== "default.jpg") {
+      const oldProfilePublicId = getPublicIdFromUrl(req.user.profilePicture);
+      if (oldProfilePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldProfilePublicId);
+        } catch (error) {
+          console.error("Error deleting old profile picture from Cloudinary:", error);
+        }
       }
-    ).select("-password");
-  
-    const token = signToken(updatedUser._id);
-  
-    res.status(200).json({
-      status: "success",
-      message: "User data updated successfully!",
-      data: {
-        user: updatedUser,
-      },
-      token,
-    });
+    }
+
+    // Update with new profilePicture
+    filteredBody.profilePicture = req.files.profilePicture[0].path;
+
+    // Invalidate cache for the new profile picture
+    const newProfilePublicId = getPublicIdFromUrl(req.files.profilePicture[0].path);
+    if (newProfilePublicId) {
+      try {
+        await cloudinary.api.resource(newProfilePublicId, { invalidate: true });
+      } catch (error) {
+        console.error("Error invalidating Cloudinary cache:", error);
+      }
+    }
+  }
+
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    req.user._id,
+    filteredBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).select("-password");
+
+  if (!updatedUser) {
+    return next(new AppError("User update failed", 500));
+  }
+
+  const token = signToken(updatedUser._id);
+
+  res.status(200).json({
+    status: "success",
+    message: "User data updated successfully!",
+    data: {
+      user: updatedUser,
+    },
+    token,
   });
+});

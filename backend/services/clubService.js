@@ -3,10 +3,108 @@ const RegistrationModel = require("../models/registrationModel");
 const ClubModel = require("../models/clubModel");
 const factory = require("./handlersFactory");
 
-exports.createClub = factory.createOne(ClubModel);
+exports.createClub = asyncHandler(async (req, res, next) => {
+  const { name, description, college } = req.body;
 
-exports.updateClub = factory.updateOne(ClubModel);
+  const profilePicture = req.files?.profilePicture
+    ? req.files.profilePicture[0].path
+    : undefined;
 
+  const coverPicture = req.files?.coverPicture
+    ? req.files.coverPicture[0].path
+    : undefined;
+
+  if (!profilePicture) {
+    return next(new Error("Profile picture is required"));
+  }
+  if (!coverPicture) {
+    return next(new Error("Cover picture is required"));
+  }
+
+  const club = await ClubModel.create({
+    name,
+    description,
+    college,
+    profilePicture,
+    coverPicture,
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: club,
+  });
+});
+
+exports.updateClub = asyncHandler(async (req, res, next) => {
+  const { name, description, college } = req.body;
+
+  // Fetch the existing club to get old image URLs
+  const club = await ClubModel.findById(req.params.id);
+  if (!club) {
+    return next(new Error("No club found with that ID"));
+  }
+
+  // Prepare the update data
+  const updateData = { name, description, college };
+
+  // Handle file uploads if present
+  if (req.files) {
+    // Function to extract public_id from Cloudinary URL
+    const getPublicIdFromUrl = (url) => {
+      if (!url) return null;
+      const parts = url.split("/");
+      const fileName = parts[parts.length - 1].split(".")[0];
+      const folder = parts[parts.length - 2];
+      return `${folder}/${fileName}`;
+    };
+
+    // Delete old profilePicture and upload new one
+    if (req.files.profilePicture && club.profilePicture) {
+      const oldProfilePublicId = getPublicIdFromUrl(club.profilePicture);
+      if (oldProfilePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldProfilePublicId);
+        } catch (error) {}
+      }
+      updateData.profilePicture = req.files.profilePicture[0].path;
+      const newProfilePublicId = getPublicIdFromUrl(req.files.profilePicture[0].path);
+      if (newProfilePublicId) {
+        try {
+          await cloudinary.api.resource(newProfilePublicId, { invalidate: true });
+        } catch (error) {}
+      }
+    }
+
+    // Delete old coverPicture and upload new one
+    if (req.files.coverPicture && club.coverPicture) {
+      const oldCoverPublicId = getPublicIdFromUrl(club.coverPicture);
+      if (oldCoverPublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldCoverPublicId);
+        } catch (error) {}
+      }
+      updateData.coverPicture = req.files.coverPicture[0].path;
+      const newCoverPublicId = getPublicIdFromUrl(req.files.coverPicture[0].path);
+      if (newCoverPublicId) {
+        try {
+          await cloudinary.api.resource(newCoverPublicId, { invalidate: true });
+        } catch (error) {}
+      }
+    }
+  }
+
+  // Update the club with new data
+  const updatedClub = await ClubModel.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    { new: true, runValidators: true }
+  );
+
+  res.status(201).json({
+    status: "success",
+    data: updatedClub,
+  });
+});
 exports.deleteClub = factory.deleteOne(ClubModel);
 
 exports.getClub = factory.getOne(ClubModel);
@@ -69,9 +167,8 @@ exports.getNotJoinedClubs = asyncHandler(async (req, res, next) => {
     _id: { $nin: joinedClubIds },
   });
   res.status(200).json({
-    count : notJoinedClubs.length,
+    count: notJoinedClubs.length,
     status: "success",
     data: notJoinedClubs,
   });
 });
-

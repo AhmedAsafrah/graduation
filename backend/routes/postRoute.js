@@ -26,7 +26,10 @@ const {
   updatePostValidator,
   deletePostValidator,
 } = require("../validators/postValidator");
+
 const { getPostsByClubValidator } = require("../validators/clubValidator");
+const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
+const upload = require("../utils/multerConfig");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
@@ -34,6 +37,8 @@ router.post(
   "/",
   protect,
   allowedTo("club_responsible", "system_responsible"),
+  setUploadFolder("posts"),
+  upload.fields([{ name: "image", maxCount: 1 }]),
   setAuthor,
   createPostValidator,
   createPost
@@ -90,6 +95,8 @@ router.put(
   "/:id",
   protect,
   allowedTo("student", "club_responsible", "system_responsible"),
+  setUploadFolder("posts"),
+  upload.fields([{ name: "image", maxCount: 1 }]),
   restrictToResourceOwner(PostModel, "author"),
   updatePostValidator,
   updatePost
