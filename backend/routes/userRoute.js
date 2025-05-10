@@ -16,6 +16,7 @@ const {
   updateUser,
   deleteUser,
   changeUserPassword,
+  searchStudentsAndClubs,
 } = require("../services/userService");
 
 const {
@@ -69,5 +70,7 @@ router.put(
   changeUserPasswordValidator,
   changeUserPassword
 );
+
+router.post("/search", protect, searchStudentsAndClubs);
 
 module.exports = router;
