@@ -10,6 +10,7 @@ const commentRoute = require("./routes/commentRoute");
 const registrationRoute = require("./routes/registrationRoute");
 const likeRoute = require("./routes/likeRoute");
 const authRoute = require("./routes/authRoute");
+const leaderboardRoute = require("./routes/leaderboardRoute");
 
 const AppError = require("./utils/appError");
 const globalError = require("./middleware/globalErrorHandler");
@@ -40,6 +41,7 @@ app.use("/api/v1/comments", commentRoute);
 app.use("/api/v1/registrations", registrationRoute);
 app.use("/api/v1/likes", likeRoute);
 app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/leaderboard", leaderboardRoute);
 
 // Catch all wrong routes (using middleware)
 app.use((req, res, next) => {

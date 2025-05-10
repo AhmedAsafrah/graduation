@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const UserModel = require("../models/userModel");
 const factory = require("./handlersFactory");
 const bcrypt = require("bcrypt");
+const ClubModel = require("../models/clubModel");
 
 exports.createUser = factory.createOne(UserModel);
 
@@ -70,3 +71,29 @@ exports.getUser = factory.getOne(UserModel);
 
 exports.getAllUsers = factory.getAll(UserModel);
 
+exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
+  const { query } = req.body;
+
+  if (!query) {
+    return next(new AppError("Search query is required", 400));
+  }
+
+  // Search for students and club_responsible
+  const users = await UserModel.find({
+    name: { $regex: query, $options: "i" },
+    $or: [{ role: "student" }, { role: "club_responsible" }],
+  }).select("-password -emailVerificationCode -emailVerificationExpires -passwordResetCode -passwordResetExpires -passwordResetVerified -lastPasswordResetRequest");
+
+  // Search for clubs
+  const clubs = await ClubModel.find({
+    name: { $regex: query, $options: "i" },
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      users,
+      clubs,
+    },
+  });
+});
