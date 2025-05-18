@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
+const cors = require("cors");
 
 const clubRoute = require("./routes/clubRoute");
 const userRoute = require("./routes/userRoute");
@@ -26,6 +27,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));

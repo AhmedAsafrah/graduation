@@ -11,7 +11,7 @@ exports.createUserValidator = [
     .withMessage("Name must be a string"),
   check("email")
     .notEmpty()
-    .withMessage("Email is required")
+    .withMessage("Email is requirz`ed")
     .isEmail()
     .withMessage("Invalid email format")
     .custom(async (val, { req }) => {

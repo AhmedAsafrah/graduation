@@ -430,7 +430,9 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
 exports.getMe = asyncHandler(async (req, res, next) => {
   // 1) User is already attached to req by the protect middleware
-  const user = await UserModel.findById(req.user._id).select("-password");
+  const user = await UserModel.findById(req.user._id)
+    .select("-password")
+    .populate("managedClub"); // Populate the managedClub field to fetch club details
 
   // 2) Send response
   res.status(200).json({

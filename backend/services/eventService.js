@@ -3,7 +3,16 @@ const factory = require("./handlersFactory");
 const asyncHandler = require("express-async-handler");
 
 exports.createEvent = asyncHandler(async (req, res, next) => {
-  const { title, description, date, startTime, endTime, location, club, author } = req.body;
+  const {
+    title,
+    description,
+    date,
+    startTime,
+    endTime,
+    location,
+    club,
+    author,
+  } = req.body;
 
   const image = req.files?.image ? req.files.image[0].path : undefined;
 
@@ -25,11 +34,43 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getAllEvents = factory.getAll(EventModel);
-exports.getEvent = factory.getOne(EventModel);
+exports.getAllEvents = asyncHandler(async (req, res, next) => {
+  const events = await EventModel.find()
+    .populate("club", "name description") // Populate club with specific fields
+    .populate("author", "name email"); // Populate author with specific fields
+
+  res.status(200).json({
+    status: "success",
+    data: events,
+  });
+});
+
+exports.getEvent = asyncHandler(async (req, res, next) => {
+  const event = await EventModel.findById(req.params.id)
+    .populate("club", "name description") // Populate club with specific fields
+    .populate("author", "name email"); // Populate author with specific fields
+
+  if (!event) {
+    return next(new Error("No event found with that ID"));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: event,
+  });
+});
 
 exports.updateEvent = asyncHandler(async (req, res, next) => {
-  const { title, description, date, startTime, endTime, location, club, author } = req.body;
+  const {
+    title,
+    description,
+    date,
+    startTime,
+    endTime,
+    location,
+    club,
+    author,
+  } = req.body;
 
   // Fetch the existing event to get the old image URL
   const event = await EventModel.findById(req.params.id);
@@ -38,7 +79,16 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
   }
 
   // Prepare the update data
-  const updateData = { title, description, date, startTime, endTime, location, club, author };
+  const updateData = {
+    title,
+    description,
+    date,
+    startTime,
+    endTime,
+    location,
+    club,
+    author,
+  };
 
   // Handle image upload if present
   if (req.files) {
@@ -87,8 +137,10 @@ exports.deleteEvent = factory.deleteOne(EventModel);
 exports.getEventsByClub = asyncHandler(async (req, res, next) => {
   const { clubId } = req.params;
 
-  // Fetch all events associated with the specified club
-  const events = await EventModel.find({ club: clubId });
+  const events = await EventModel.find({ club: clubId }).populate(
+    "author",
+    "name email"
+  ); // Populate author with specific fields
 
   res.status(200).json({
     status: "success",
@@ -99,10 +151,12 @@ exports.getEventsByClub = asyncHandler(async (req, res, next) => {
 exports.getComingSoonEvents = asyncHandler(async (req, res, next) => {
   const currentDate = new Date();
 
-  // Fetch all events with a date greater than the current date
   const comingSoonEvents = await EventModel.find({
     date: { $gt: currentDate },
-  }).sort("date");
+  })
+    .sort("date")
+    .populate("club", "name description") // Populate club with specific fields
+    .populate("author", "name email"); // Populate author with specific fields
 
   res.status(200).json({
     status: "success",
