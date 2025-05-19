@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 const cloudinary = require("../utils/cloudinaryConfig");
 
+const tempSignupStore = {}; // Temporary in-memory store for signup data
 // Signup controller (unchanged)
 exports.signup = asyncHandler(async (req, res, next) => {
   // 1) Check if a user with this email already exists
