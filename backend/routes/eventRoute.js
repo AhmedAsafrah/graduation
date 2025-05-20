@@ -10,6 +10,7 @@ const {
 const { setAuthor } = require("../middleware/setAuthorMiddleware");
 const { createCommentValidator } = require("../validators/commentValidator");
 const { protect, allowedTo } = authService;
+const CommentModel = require("../models/commentModel");
 
 const {
   createEvent,
@@ -81,10 +82,15 @@ router.post(
       event.comments.push(comment._id);
       await event.save();
 
+      // Populate author and event fields
+      const populatedComment = await CommentModel.findById(comment._id)
+        .populate("author", "name email")
+        .populate("event", "title date");
+
       res.status(201).json({
         status: "success",
         data: {
-          comment,
+          comment: populatedComment,
         },
       });
     } catch (error) {
@@ -95,7 +101,6 @@ router.post(
     }
   }
 );
-
 router.put(
   "/:id",
   protect,
