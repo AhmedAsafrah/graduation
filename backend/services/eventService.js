@@ -36,15 +36,33 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
 
 exports.getAllEvents = asyncHandler(async (req, res, next) => {
   const events = await EventModel.find()
-    .populate("club", "name description") // Populate club with specific fields
-    .populate("author", "name email"); // Populate author with specific fields
+    .populate("club", "name description")
+    .populate("author", "name email")
+    .populate({
+      path: "comments",
+      select: "content author createdAt",
+      populate: { path: "author", select: "name email" }
+    });
+
+  // Map comments to include author info in a 'description' field
+  const eventsWithCommentDescriptions = events.map(event => {
+    const eventObj = event.toObject();
+    eventObj.comments = eventObj.comments.map(comment => {
+      return {
+        ...comment,
+        description: comment.author
+          ? `${comment.author.name} (${comment.author.email})`
+          : null,
+      };
+    });
+    return eventObj;
+  });
 
   res.status(200).json({
     status: "success",
-    data: events,
+    data: eventsWithCommentDescriptions,
   });
 });
-
 exports.getEvent = asyncHandler(async (req, res, next) => {
   const event = await EventModel.findById(req.params.id)
     .populate("club", "name description") // Populate club with specific fields
