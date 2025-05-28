@@ -37,31 +37,25 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
       new AppError(`No user found with the id ${req.params.id}`, 404)
     );
   }
-  // 2) Verify the current password
-  const isPasswordCorrect = await bcrypt.compare(
-    req.body.currentPassword,
-    user.password
-  );
-  if (!isPasswordCorrect) {
-    return next(new AppError("Your current password is incorrect", 401));
+
+  // 2) Check if password and passwordConfirm are provided and match
+  if (!req.body.password || !req.body.passwordConfirm) {
+    return next(new AppError("Password and passwordConfirm are required", 400));
   }
-  // 3) Update the password using findByIdAndUpdate
-  const updatedUser = await UserModel.findByIdAndUpdate(
-    req.params.id,
-    {
-      password: await bcrypt.hash(req.body.password, 12),
-      passwordChangedAt: Date.now(),
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  if (req.body.password !== req.body.passwordConfirm) {
+    return next(new AppError("Passwords do not match", 400));
+  }
+
+  // 3) Update the password and save (to trigger pre-save hooks)
+  user.password = req.body.password;
+  user.passwordChangedAt = Date.now();
+  await user.save();
+
   // 4) Respond with success
   res.status(200).json({
     status: "success",
     message: "Password updated successfully",
-    data: updatedUser,
+    data: user,
   });
 });
 
@@ -69,7 +63,26 @@ exports.deleteUser = factory.deleteOne(UserModel);
 
 exports.getUser = factory.getOne(UserModel);
 
-exports.getAllUsers = factory.getAll(UserModel);
+exports.getAllUsers = asyncHandler(async (req, res, next) => {
+  // Get all users
+  let users = await UserModel.find();
+
+  // Find club_responsible users and populate managedClub
+  const populatedUsers = await Promise.all(
+    users.map(async (user) => {
+      if (user.role === "club_responsible" && user.managedClub) {
+        await user.populate("managedClub");
+      }
+      return user;
+    })
+  );
+
+  res.status(200).json({
+    status: "success",
+    count: populatedUsers.length,
+    data: populatedUsers,
+  });
+});
 
 exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
   const { query } = req.body;
@@ -82,7 +95,9 @@ exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
   const users = await UserModel.find({
     name: { $regex: query, $options: "i" },
     $or: [{ role: "student" }, { role: "club_responsible" }],
-  }).select("-password -emailVerificationCode -emailVerificationExpires -passwordResetCode -passwordResetExpires -passwordResetVerified -lastPasswordResetRequest");
+  }).select(
+    "-password -emailVerificationCode -emailVerificationExpires -passwordResetCode -passwordResetExpires -passwordResetVerified -lastPasswordResetRequest"
+  );
 
   // Search for clubs
   const clubs = await ClubModel.find({
