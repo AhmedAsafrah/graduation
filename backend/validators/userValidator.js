@@ -235,11 +235,6 @@ exports.changeUserPasswordValidator = [
       }
       return true;
     }),
-
-  check("currentPassword")
-    .notEmpty()
-    .withMessage("Current password is required"),
-
   check("password")
     .trim()
     .notEmpty()

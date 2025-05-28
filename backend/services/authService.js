@@ -121,42 +121,6 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Login controller (unchanged)
-// exports.login = asyncHandler(async (req, res, next) => {
-//   // 1) Check if user exists and password is correct
-//   const user = await UserModel.findOne({ email: req.body.email }).select(
-//     "+password"
-//   );
-
-//   if (!user) {
-//     return next(new AppError("Incorrect email or password", 401));
-//   }
-
-//   // 2) Check if email is verified
-//   if (!user.emailVerified) {
-//     return next(
-//       new AppError("Please verify your email before logging in.", 403)
-//     );
-//   }
-
-//   // 3) Verify password
-//   if (!(await bcrypt.compare(req.body.password, user.password))) {
-//     return next(new AppError("Incorrect email or password", 401));
-//   }
-
-//   // 4) Generate JWT token
-//   const token = signToken(user._id);
-
-//   // 5) Send response
-//   res.status(200).json({
-//     status: "success",
-//     data: {
-//       user,
-//     },
-//     token,
-//   });
-// });
-
 // Modified login controller to require email verification
 exports.login = asyncHandler(async (req, res, next) => {
   // 1) Check if user exists and password is correct
