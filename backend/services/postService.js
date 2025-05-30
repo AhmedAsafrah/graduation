@@ -78,11 +78,28 @@ exports.updatePost = asyncHandler(async (req, res, next) => {
     data: updatedPost,
   });
 });
+
 exports.deletePost = factory.deleteOne(PostModel);
 
 exports.getPost = factory.getOne(PostModel);
 
-exports.getAllPosts = factory.getAll(PostModel);
+exports.getAllPosts = asyncHandler(async (req, res, next) => {
+  let posts = await PostModel.find()
+    .populate("club")
+    .populate({
+      path: "comments",
+      populate: {
+        path: "author",
+        select: "_id profilePicture name",
+      },
+    });
+
+  res.status(200).json({
+    status: "success",
+    results: posts.length,
+    data: posts,
+  });
+});
 
 exports.getPostEngagement = asyncHandler(async (req, res, next) => {
   // 1) Find the post by ID

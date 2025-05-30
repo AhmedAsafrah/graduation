@@ -9,15 +9,16 @@ exports.getAllLikes = factory.getAll(LikeModel);
 exports.toggleLike = async (req, res, next) => {
   try {
     const { targetType, targetId } = req.body;
-    const userId = req.user.id; // req.user.id is already a string
-    const user = req.body.user; // Set by setAuthor middleware
+    const userId = req.user.id;
+    const user = req.body.user;
 
-    // Ensure the user field matches the logged-in user
     if (user !== userId) {
       return next(
         new AppError("You can only create a like for yourself", 403)
       );
     }
+
+    const TargetModel = targetType === "event" ? EventModel : PostModel;
 
     // Check if the like already exists
     const existingLike = await LikeModel.findOne({
@@ -27,35 +28,38 @@ exports.toggleLike = async (req, res, next) => {
     });
 
     if (existingLike) {
-      // If the like exists, remove it (toggle off)
+      // Remove like (toggle off)
       await LikeModel.deleteOne({ _id: existingLike._id });
 
-      // Remove the like from the target's likes array (if applicable)
-      const TargetModel = targetType === "event" ? EventModel : PostModel;
+      // Remove from target's likes array
       const target = await TargetModel.findById(targetId);
-      if (target.likes) {
+      if (target && target.likes) {
         target.likes = target.likes.filter(
           (likeId) => likeId.toString() !== existingLike._id.toString()
         );
         await target.save();
       }
 
+      // Fetch updated likes (IDs only)
+      const updatedTarget = await TargetModel.findById(targetId);
+
       return res.status(200).json({
         status: "success",
         message: "Like removed successfully",
-        data: null,
+        data: {
+          likes: updatedTarget && updatedTarget.likes ? updatedTarget.likes : [],
+        },
       });
     }
 
-    // If the like doesn't exist, create it (toggle on)
+    // Create like (toggle on)
     const newLike = await LikeModel.create({
       user,
       targetType,
       targetId,
     });
 
-    // Add the like to the target's likes array (if applicable)
-    const TargetModel = targetType === "event" ? EventModel : PostModel;
+    // Add to target's likes array
     const target = await TargetModel.findById(targetId);
     if (target) {
       if (!target.likes) {
@@ -65,14 +69,17 @@ exports.toggleLike = async (req, res, next) => {
       await target.save();
     }
 
+    // Fetch updated likes (IDs only)
+    const updatedTarget = await TargetModel.findById(targetId);
+
     res.status(201).json({
       status: "success",
       data: {
-        like: newLike,
+        like: newLike._id,
+        likes: updatedTarget && updatedTarget.likes ? updatedTarget.likes : [],
       },
     });
   } catch (error) {
-    // If the error is a duplicate key error (user already liked this target), it should be handled by the toggle logic
     if (error.code === 11000) {
       return next(new AppError("You have already liked this target", 400));
     }
