@@ -38,7 +38,7 @@ exports.updatePost = asyncHandler(async (req, res, next) => {
   const updateData = { title, content, author, club };
 
   // Handle image upload if present
-  if (req.files) {
+  if (req.files && req.files.image) {
     // Function to extract public_id from Cloudinary URL
     const getPublicIdFromUrl = (url) => {
       if (!url) return null;
@@ -48,21 +48,23 @@ exports.updatePost = asyncHandler(async (req, res, next) => {
       return `${folder}/${fileName}`;
     };
 
-    // Delete old image and upload new one
-    if (req.files.image && post.image) {
+    // Delete old image from Cloudinary
+    if (post.image) {
       const oldImagePublicId = getPublicIdFromUrl(post.image);
       if (oldImagePublicId) {
         try {
           await cloudinary.uploader.destroy(oldImagePublicId);
         } catch (error) {}
       }
-      updateData.image = req.files.image[0].path;
-      const newImagePublicId = getPublicIdFromUrl(req.files.image[0].path);
-      if (newImagePublicId) {
-        try {
-          await cloudinary.api.resource(newImagePublicId, { invalidate: true });
-        } catch (error) {}
-      }
+    }
+    // Set new image path
+    updateData.image = req.files.image[0].path;
+    // Optionally invalidate new image in Cloudinary
+    const newImagePublicId = getPublicIdFromUrl(req.files.image[0].path);
+    if (newImagePublicId) {
+      try {
+        await cloudinary.api.resource(newImagePublicId, { invalidate: true });
+      } catch (error) {}
     }
   }
 
@@ -85,6 +87,7 @@ exports.getPost = factory.getOne(PostModel);
 
 exports.getAllPosts = asyncHandler(async (req, res, next) => {
   let posts = await PostModel.find()
+    .sort({ createdAt: -1 })
     .populate("club")
     .populate({
       path: "comments",

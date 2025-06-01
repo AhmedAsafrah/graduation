@@ -3,6 +3,8 @@ const RegistrationModel = require("../models/registrationModel");
 const ClubModel = require("../models/clubModel");
 const factory = require("./handlersFactory");
 
+const mongoose = require("mongoose");
+
 exports.createClub = asyncHandler(async (req, res, next) => {
   const { name, description, college } = req.body;
 
@@ -170,5 +172,32 @@ exports.getNotJoinedClubs = asyncHandler(async (req, res, next) => {
     count: notJoinedClubs.length,
     status: "success",
     data: notJoinedClubs,
+  });
+});
+
+exports.getClubMembers = asyncHandler(async (req, res, next) => {
+  const { clubId } = req.params;
+
+  // Convert clubId to ObjectId
+  const clubObjectId = mongoose.Types.ObjectId(clubId);
+
+  // Find all approved registrations for the club and populate student info
+  const registrations = await RegistrationModel.find({
+    club: clubObjectId,
+    status: "approved",
+  }).populate({
+    path: "student",
+    select: "_id name email profilePicture",
+  });
+
+  // Extract student objects (filter out any nulls)
+  const students = registrations
+    .map(reg => reg.student)
+    .filter(student => student);
+
+  res.status(200).json({
+    status: "success",
+    count: students.length,
+    data: students,
   });
 });

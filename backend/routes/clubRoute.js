@@ -19,6 +19,7 @@ const {
   getUnregisteredClubs,
   getJoinedClubs,
   getNotJoinedClubs,
+  getClubMembers,
 } = require("../services/clubService");
 
 const {
@@ -33,6 +34,8 @@ const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
 const { protect, allowedTo } = authService;
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
+
+// Create club
 router.post(
   "/",
   protect,
@@ -46,8 +49,10 @@ router.post(
   createClub
 );
 
+// Get all clubs
 router.get("/", getAllClubs);
 
+// Get all unregistered clubs for user
 router.get(
   "/unregistered",
   protect,
@@ -55,6 +60,7 @@ router.get(
   getUnregisteredClubs
 );
 
+// Get all joined clubs for user
 router.get(
   "/joined",
   protect,
@@ -62,6 +68,7 @@ router.get(
   getJoinedClubs
 );
 
+// Get all not-joined clubs for user
 router.get(
   "/not-joined",
   protect,
@@ -69,8 +76,18 @@ router.get(
   getNotJoinedClubs
 );
 
+// Get all members of a specific club (IMPORTANT: Place before /:id)
+router.get(
+  "/:clubId/members",
+  protect,
+  allowedTo("system_responsible", "club_responsible", "student"),
+  getClubMembers
+);
+
+// Get specific club
 router.get("/:id", getSpecificClubValidator, getClub);
 
+// Update club
 router.put(
   "/:id",
   protect,
@@ -83,6 +100,7 @@ router.put(
   updateClub
 );
 
+// Delete club
 router.delete(
   "/:id",
   protect,
