@@ -15,12 +15,13 @@ const {
   getLeaderboardValidator,
   deleteLeaderboardValidator,
 } = require("../validators/leaderboardValidator");
+const { restrictToResourceOwner } = require("../middleware/restrictResourceMiddleware");
 
 // Create a leaderboard
 router.post(
   "/",
   protect,
-  allowedTo("admin", "system_responsible"),
+  allowedTo("admin", "system_responsible", ),
   createLeaderboardValidator,
   createLeaderboard
 );
@@ -29,7 +30,7 @@ router.post(
 router.get(
   "/",
   protect,
-  allowedTo("admin", "system_responsible"),
+  allowedTo("system_responsible", "club_responsible", "student"),
   getAllLeaderboards
 );
 
@@ -37,7 +38,7 @@ router.get(
 router.get(
   "/:id",
   protect,
-  allowedTo("admin", "system_responsible"),
+  allowedTo("system_responsible", "club_responsible"),
   getLeaderboardValidator,
   getLeaderboard
 );
@@ -46,7 +47,9 @@ router.get(
 router.put(
   "/:id",
   protect,
-  allowedTo("admin", "system_responsible"),
+  allowedTo( "system_responsible", "club_responsible"),
+  // Allow club_responsible to update leaderboards they manage
+  restrictToResourceOwner("Leaderboard", "managedClub"),
   updateLeaderboardValidator,
   updateLeaderboard
 );
@@ -55,7 +58,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  allowedTo("admin", "system_responsible"),
+  allowedTo("system_responsible", "club_responsible"),
   deleteLeaderboardValidator,
   deleteLeaderboard
 );
