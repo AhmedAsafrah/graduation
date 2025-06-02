@@ -22,8 +22,14 @@ const userSchema = new mongoose.Schema(
     lastPasswordResetRequest: { type: Date },
 
     profilePicture: { type: String, default: "default.jpg" },
-    
-    active: { type: Boolean, default: true },
+
+    active: {
+      type: Boolean,
+      default: true,
+      required: function () {
+        return this.role === "student" || this.role === "club_responsible";
+      },
+    },
 
     role: {
       type: String,
