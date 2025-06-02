@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema(
     lastPasswordResetRequest: { type: Date },
 
     profilePicture: { type: String, default: "default.jpg" },
+    
+    active: { type: Boolean, default: true },
 
     role: {
       type: String,

@@ -112,3 +112,19 @@ exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
     },
   });
 });
+
+exports.toggleUserActive = asyncHandler(async (req, res, next) => {
+  const user = await UserModel.findById(req.params.id);
+  if (!user) {
+    return next(new AppError(`No user found with the id ${req.params.id}`, 404));
+  }
+
+  user.active = !user.active;
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: `User is now ${user.active ? "active" : "inactive"}`,
+    data: user,
+  });
+});

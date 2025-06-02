@@ -17,6 +17,7 @@ const {
   deleteUser,
   changeUserPassword,
   searchStudentsAndClubs,
+  toggleUserActive
 } = require("../services/userService");
 
 const {
@@ -35,6 +36,13 @@ router.post(
   allowedTo("system_responsible"),
   createUserValidator,
   createUser
+);
+
+router.put(
+  "/:id/toggleActive",
+  protect,
+  allowedTo("system_responsible"),
+  toggleUserActive
 );
 
 router.get("/", protect, allowedTo("system_responsible"), getAllUsers);

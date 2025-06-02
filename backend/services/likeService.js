@@ -40,8 +40,14 @@ exports.toggleLike = async (req, res, next) => {
         await target.save();
       }
 
-      // Fetch updated likes (IDs only)
-      const updatedTarget = await TargetModel.findById(targetId);
+      // Fetch updated likes with user info
+      const updatedTarget = await TargetModel.findById(targetId).populate({
+        path: "likes",
+        populate: {
+          path: "user",
+          select: "_id name"
+        }
+      });
 
       return res.status(200).json({
         status: "success",
@@ -69,8 +75,14 @@ exports.toggleLike = async (req, res, next) => {
       await target.save();
     }
 
-    // Fetch updated likes (IDs only)
-    const updatedTarget = await TargetModel.findById(targetId);
+    // Fetch updated likes with user info
+    const updatedTarget = await TargetModel.findById(targetId).populate({
+      path: "likes",
+      populate: {
+        path: "user",
+        select: "_id name"
+      }
+    });
 
     res.status(201).json({
       status: "success",
