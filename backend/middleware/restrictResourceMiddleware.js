@@ -31,9 +31,10 @@ exports.restrictToResourceOwner = (Model, ownerField = "author") =>
   });
 
 // Middleware to restrict actions to the club's manager (for club_responsible)
-exports.restrictToClubManager = (Model) =>
+exports.restrictToClubManager = (Model, paramName = "id") =>
   asyncHandler(async (req, res, next) => {
-    const club = await Model.findById(req.params.id);
+    const clubId = req.params[paramName];
+    const club = await Model.findById(clubId);
     if (!club) {
       return next(new AppError(`${Model.modelName} not found`, 404));
     }
@@ -50,7 +51,7 @@ exports.restrictToClubManager = (Model) =>
           new AppError("You are not assigned to manage any club", 403)
         );
       }
-      if (req.user.managedClub.toString() !== req.params.id) {
+      if (req.user.managedClub.toString() !== clubId) {
         return next(
           new AppError("You can only update the club you manage", 403)
         );

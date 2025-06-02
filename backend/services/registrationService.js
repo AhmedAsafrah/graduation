@@ -78,6 +78,62 @@ exports.approveRegistration = async (req, res, next) => {
     registration.status = status;
     await registration.save();
 
+    // If approved, add student to club's members array (avoid duplicates)
+    if (status === "approved") {
+      if (!club.members) {
+        club.members = [];
+      }
+      const studentId = registration.student.toString();
+      if (!club.members.map(id => id.toString()).includes(studentId)) {
+        club.members.push(registration.student);
+        await club.save();
+      }
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        registration,
+      },
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+};
+
+exports.rejectRegistration = async (req, res, next) => {
+  try {
+    const registrationId = req.params.id;
+
+    const registration = await RegistrationModel.findById(registrationId);
+    if (!registration) {
+      return next(new AppError("Registration not found", 404));
+    }
+
+    // Find the club associated with the registration
+    const club = await ClubModel.findById(registration.club);
+    if (!club) {
+      return next(new AppError("Club not found", 404));
+    }
+
+    // Check if the logged-in user is the club admin or system_responsible
+    const user = req.user;
+    const isClubAdmin = user.role === "club_responsible" && user.managedClub.toString() === registration.club.toString();
+    const isSystemResponsible = user.role === "system_responsible";
+
+    if (!isClubAdmin && !isSystemResponsible) {
+      return next(
+        new AppError(
+          "You are not authorized to reject this registration",
+          403
+        )
+      );
+    }
+
+    // Update the status to rejected
+    registration.status = "rejected";
+    await registration.save();
+
     res.status(200).json({
       status: "success",
       data: {

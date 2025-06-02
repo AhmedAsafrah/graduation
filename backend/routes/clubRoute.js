@@ -20,6 +20,7 @@ const {
   getJoinedClubs,
   getNotJoinedClubs,
   getClubMembers,
+  getPendingRequests,
 } = require("../services/clubService");
 
 const {
@@ -47,6 +48,14 @@ router.post(
   ]),
   createClubValidator,
   createClub
+);
+
+router.get(
+  "/:clubId/pending-requests",
+  protect,
+  allowedTo("club_responsible", "system_responsible"),
+  restrictToClubManager(ClubModel, "clubId"),
+  getPendingRequests
 );
 
 // Get all clubs
@@ -108,5 +117,6 @@ router.delete(
   deleteClubValidator,
   deleteClub
 );
+
 
 module.exports = router;

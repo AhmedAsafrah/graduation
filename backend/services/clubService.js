@@ -3,8 +3,6 @@ const RegistrationModel = require("../models/registrationModel");
 const ClubModel = require("../models/clubModel");
 const factory = require("./handlersFactory");
 
-const mongoose = require("mongoose");
-
 exports.createClub = asyncHandler(async (req, res, next) => {
   const { name, description, college } = req.body;
 
@@ -111,7 +109,17 @@ exports.deleteClub = factory.deleteOne(ClubModel);
 
 exports.getClub = factory.getOne(ClubModel);
 
-exports.getAllClubs = factory.getAll(ClubModel);
+exports.getAllClubs = asyncHandler(async (req, res, next) => {
+  const clubs = await ClubModel.find().populate({
+    path: "members",
+    select: "name email"
+  });
+  res.status(200).json({
+    status: "success",
+    results: clubs.length,
+    data: clubs,
+  });
+});
 
 exports.getUnregisteredClubs = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
@@ -178,20 +186,40 @@ exports.getNotJoinedClubs = asyncHandler(async (req, res, next) => {
 exports.getClubMembers = asyncHandler(async (req, res, next) => {
   const { clubId } = req.params;
 
-  // Convert clubId to ObjectId
-  const clubObjectId = mongoose.Types.ObjectId(clubId);
+  // Find the club and populate members' info
+  const club = await ClubModel.findById(clubId).populate({
+    path: "members",
+    select: "_id name email profilePicture"
+  });
 
-  // Find all approved registrations for the club and populate student info
-  const registrations = await RegistrationModel.find({
-    club: clubObjectId,
-    status: "approved",
+  if (!club) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Club not found",
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    count: club.members.length,
+    data: club.members,
+  });
+});
+
+exports.getPendingRequests = asyncHandler(async (req, res, next) => {
+  const { clubId } = req.params;
+
+  // Find all pending registrations for the club and populate student info
+  const pendingRegistrations = await RegistrationModel.find({
+    club: clubId,
+    status: "pending",
   }).populate({
     path: "student",
-    select: "_id name email profilePicture",
+    select: "_id name email profilePicture"
   });
 
   // Extract student objects (filter out any nulls)
-  const students = registrations
+  const students = pendingRegistrations
     .map(reg => reg.student)
     .filter(student => student);
 

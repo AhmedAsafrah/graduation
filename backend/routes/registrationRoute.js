@@ -9,6 +9,7 @@ const {
   createRegistration,
   approveRegistration,
   getAllRegistrations,
+  rejectRegistration,
 } = require("../services/registrationService");
 
 const {
@@ -33,6 +34,13 @@ router.put(
   allowedTo("club_responsible", "system_responsible"),
   updateRegistrationValidator,
   approveRegistration
+);
+
+router.patch(
+  "/:id/reject",
+  protect,
+  allowedTo("club_responsible", "system_responsible"),
+  rejectRegistration
 );
 
 router.get("/", protect, allowedTo("system_responsible"), getAllRegistrations);

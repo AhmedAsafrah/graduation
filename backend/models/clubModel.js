@@ -13,6 +13,7 @@ const clubSchema = new mongoose.Schema(
       required: [true, "Cover picture is required"],
     },
     college: { type: String, required: [true, "College is required"] },
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
   },
   {
     timestamps: true,
