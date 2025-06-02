@@ -6,7 +6,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: (req, file) => ({
     folder: req.folder || "uploads", // Dynamic folder, fallback to "uploads"
-    allowed_formats: ["jpg", "jpeg", "png"],
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "pdf", "docx", "xlsx", "webm"],
     public_id: `${file.fieldname}-${Date.now()}-${file.originalname.split(".")[0]}`,
   }),
 });
