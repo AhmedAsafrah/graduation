@@ -12,6 +12,11 @@ const leaderboardSchema = new mongoose.Schema(
       required: [true, "Description is required"],
       trim: true,
     },
+    author: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: true,
+    },
     top1: {
       type: mongoose.Schema.ObjectId,
       ref: "User",

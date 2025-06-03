@@ -31,6 +31,7 @@ exports.createLeaderboard = asyncHandler(async (req, res, next) => {
     top2: top2User ? top2User._id : null,
     top3: top3User ? top3User._id : null,
     event,
+    author: req.user._id,
   });
 
   res.status(201).json({
