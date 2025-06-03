@@ -23,11 +23,11 @@ const upload = require("../utils/multerConfig");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
-router.post("/signup", signupValidator, signup);
+router.post("/signup", signupValidator, signup); /* */
 router.post("/login", loginValidator, login);
 router.post("/forgotPassword", forgotPassword);
 router.post("/verifyResetPassword", verifyResetPasswordCode);
-router.put("/resetPassword", resetPassword);
+router.put("/resetPassword", resetPassword); /* */
 
 router.post("/verifyEmail", verifyEmailCode);
 

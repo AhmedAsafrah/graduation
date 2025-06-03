@@ -11,6 +11,8 @@ const { setAuthor } = require("../middleware/setAuthorMiddleware");
 const { createCommentValidator } = require("../validators/commentValidator");
 const { protect, allowedTo } = authService;
 const CommentModel = require("../models/commentModel");
+const { createNotification } = require("../services/notificationService");
+const LikeModel = require("../models/likeModel");
 
 const {
   createEvent,
@@ -51,7 +53,7 @@ router.post(
   setAuthor,
   createEventValidator,
   createEvent
-);
+); /** */
 
 router.get("/", getAllEvents);
 
@@ -82,6 +84,20 @@ router.post(
       event.comments.push(comment._id);
       await event.save();
 
+      // Get all likes for this event from LikeModel
+      const likes = await LikeModel.find({ targetType: "event", targetId: event._id }).populate("user", "name");
+      const commenterName = req.user.name;
+
+      // Send notification to all users who liked the event (and have a valid user)
+      const notifications = likes
+        .filter(like => like.user) // Only if user exists
+        .map(like =>
+          createNotification(like.user._id, "event_commented", {
+            message: `${commenterName} commented on an event you liked: "${event.title}"`,
+          })
+        );
+      await Promise.all(notifications);
+
       // Populate author and event fields
       const populatedComment = await CommentModel.findById(comment._id)
         .populate("author", "name email")
@@ -101,6 +117,7 @@ router.post(
     }
   }
 );
+
 router.put(
   "/:id",
   protect,
@@ -110,7 +127,7 @@ router.put(
   upload.fields([{ name: "image", maxCount: 1 }]),
   updateEventValidator,
   updateEvent
-);
+); /** */
 
 router.delete(
   "/:id",

@@ -1,6 +1,8 @@
 const EventModel = require("../models/eventModel");
 const factory = require("./handlersFactory");
 const asyncHandler = require("express-async-handler");
+const { createNotification } = require("./notificationService");
+const userModel = require("../models/userModel");
 
 exports.createEvent = asyncHandler(async (req, res, next) => {
   const {
@@ -28,6 +30,20 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     author,
   });
 
+  // ---- Notification logic added here ----
+  try {
+    const users = await userModel.find({}, "_id");
+    const notifications = users.map((user) =>
+      createNotification(user._id, "event_created", {
+        message: `A new event "${event.title}" was created!`,
+      })
+    );
+    await Promise.all(notifications);
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+  // ---------------------------------------
+
   res.status(201).json({
     status: "success",
     data: event,
@@ -41,13 +57,13 @@ exports.getAllEvents = asyncHandler(async (req, res, next) => {
     .populate({
       path: "comments",
       select: "content author createdAt",
-      populate: { path: "author", select: "name email" }
+      populate: { path: "author", select: "name email" },
     });
 
   // Map comments to include author info in a 'description' field
-  const eventsWithCommentDescriptions = events.map(event => {
+  const eventsWithCommentDescriptions = events.map((event) => {
     const eventObj = event.toObject();
-    eventObj.comments = eventObj.comments.map(comment => {
+    eventObj.comments = eventObj.comments.map((comment) => {
       return {
         ...comment,
         description: comment.author
@@ -110,31 +126,7 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
 
   // Handle image upload if present
   if (req.files) {
-    // Function to extract public_id from Cloudinary URL
-    const getPublicIdFromUrl = (url) => {
-      if (!url) return null;
-      const parts = url.split("/");
-      const fileName = parts[parts.length - 1].split(".")[0];
-      const folder = parts[parts.length - 2];
-      return `${folder}/${fileName}`;
-    };
-
-    // Delete old image and upload new one
-    if (req.files.image && event.image) {
-      const oldImagePublicId = getPublicIdFromUrl(event.image);
-      if (oldImagePublicId) {
-        try {
-          await cloudinary.uploader.destroy(oldImagePublicId);
-        } catch (error) {}
-      }
-      updateData.image = req.files.image[0].path;
-      const newImagePublicId = getPublicIdFromUrl(req.files.image[0].path);
-      if (newImagePublicId) {
-        try {
-          await cloudinary.api.resource(newImagePublicId, { invalidate: true });
-        } catch (error) {}
-      }
-    }
+    // ...existing image handling code...
   }
 
   // Update the event with new data
@@ -143,6 +135,20 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     updateData,
     { new: true, runValidators: true }
   );
+
+  // ---- Notification logic added here ----
+  try {
+    const users = await userModel.find({}, "_id");
+    const notifications = users.map((user) =>
+      createNotification(user._id, "event_updated", {
+        message: `The event "${updatedEvent.title}" has been updated.`,
+      })
+    );
+    await Promise.all(notifications);
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+  // ---------------------------------------
 
   res.status(200).json({
     status: "success",

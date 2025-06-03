@@ -42,7 +42,7 @@ router.post(
   setAuthor,
   createPostValidator,
   createPost
-);
+); /** */
 
 router.get("/", getAllPosts);
 
@@ -89,7 +89,7 @@ router.post(
       });
     }
   }
-);
+); /** */
 
 router.put(
   "/:id",
