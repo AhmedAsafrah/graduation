@@ -12,6 +12,7 @@ const registrationRoute = require("./routes/registrationRoute");
 const likeRoute = require("./routes/likeRoute");
 const authRoute = require("./routes/authRoute");
 const leaderboardRoute = require("./routes/leaderboardRoute");
+const notificationRoute = require("./routes/notificationRoute");
 
 const AppError = require("./utils/appError");
 const globalError = require("./middleware/globalErrorHandler");
@@ -27,7 +28,13 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+app.use(
+  cors({
+    origin: /^http:\/\/localhost:\d+$/,
+    credentials: true,
+  })
+);
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -44,6 +51,7 @@ app.use("/api/v1/registrations", registrationRoute);
 app.use("/api/v1/likes", likeRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/leaderboard", leaderboardRoute);
+app.use("/api/v1/notifications", notificationRoute);
 
 // Catch all wrong routes (using middleware)
 app.use((req, res, next) => {

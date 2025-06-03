@@ -2,6 +2,8 @@ const asyncHandler = require("express-async-handler");
 const RegistrationModel = require("../models/registrationModel");
 const ClubModel = require("../models/clubModel");
 const factory = require("./handlersFactory");
+const { createNotification } = require("./notificationService");
+const UserModel = require("../models/userModel");
 
 exports.createClub = asyncHandler(async (req, res, next) => {
   const { name, description, college } = req.body;
@@ -29,12 +31,25 @@ exports.createClub = asyncHandler(async (req, res, next) => {
     coverPicture,
   });
 
+  // ---- Notification logic added here ----
+  try {
+    const users = await UserModel.find({}, "_id");
+    const notifications = users.map((user) => {
+      return createNotification(user._id, "club_created", {
+        message: `A new club "${club.name}" was created!`,
+      });
+    });
+    await Promise.all(notifications);
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+  // ---------------------------------------
+
   res.status(201).json({
     status: "success",
     data: club,
   });
 });
-
 exports.updateClub = asyncHandler(async (req, res, next) => {
   const { name, description, college } = req.body;
 
@@ -67,10 +82,14 @@ exports.updateClub = asyncHandler(async (req, res, next) => {
         } catch (error) {}
       }
       updateData.profilePicture = req.files.profilePicture[0].path;
-      const newProfilePublicId = getPublicIdFromUrl(req.files.profilePicture[0].path);
+      const newProfilePublicId = getPublicIdFromUrl(
+        req.files.profilePicture[0].path
+      );
       if (newProfilePublicId) {
         try {
-          await cloudinary.api.resource(newProfilePublicId, { invalidate: true });
+          await cloudinary.api.resource(newProfilePublicId, {
+            invalidate: true,
+          });
         } catch (error) {}
       }
     }
@@ -84,7 +103,9 @@ exports.updateClub = asyncHandler(async (req, res, next) => {
         } catch (error) {}
       }
       updateData.coverPicture = req.files.coverPicture[0].path;
-      const newCoverPublicId = getPublicIdFromUrl(req.files.coverPicture[0].path);
+      const newCoverPublicId = getPublicIdFromUrl(
+        req.files.coverPicture[0].path
+      );
       if (newCoverPublicId) {
         try {
           await cloudinary.api.resource(newCoverPublicId, { invalidate: true });
@@ -112,7 +133,7 @@ exports.getClub = factory.getOne(ClubModel);
 exports.getAllClubs = asyncHandler(async (req, res, next) => {
   const clubs = await ClubModel.find().populate({
     path: "members",
-    select: "name email"
+    select: "name email",
   });
   res.status(200).json({
     status: "success",
@@ -189,7 +210,7 @@ exports.getClubMembers = asyncHandler(async (req, res, next) => {
   // Find the club and populate members' info
   const club = await ClubModel.findById(clubId).populate({
     path: "members",
-    select: "_id name email profilePicture"
+    select: "_id name email profilePicture",
   });
 
   if (!club) {
@@ -215,13 +236,13 @@ exports.getPendingRequests = asyncHandler(async (req, res, next) => {
     status: "pending",
   }).populate({
     path: "student",
-    select: "_id name email profilePicture"
+    select: "_id name email profilePicture",
   });
 
   // Extract student objects (filter out any nulls)
   const students = pendingRegistrations
-    .map(reg => reg.student)
-    .filter(student => student);
+    .map((reg) => reg.student)
+    .filter((student) => student);
 
   res.status(200).json({
     status: "success",

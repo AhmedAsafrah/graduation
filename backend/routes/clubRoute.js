@@ -48,7 +48,7 @@ router.post(
   ]),
   createClubValidator,
   createClub
-);
+); /* */
 
 router.get(
   "/:clubId/pending-requests",

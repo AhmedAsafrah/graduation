@@ -9,6 +9,8 @@ const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 const cloudinary = require("../utils/cloudinaryConfig");
 
+const { createNotification } = require("./notificationService");
+
 const tempSignupStore = {}; // Temporary in-memory store for signup data
 // Signup controller (unchanged)
 exports.signup = asyncHandler(async (req, res, next) => {
@@ -106,6 +108,12 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
     profilePicture: tempData.profilePicture,
     emailVerified: true,
   });
+
+  // ---- Notification logic added here ----
+  await createNotification(user._id, "signup", {
+    message: "Welcome! Your account was created successfully.",
+  });
+  // ---------------------------------------
 
   // 4) Clean up temporary data
   delete tempSignupStore[req.body.email];
@@ -402,6 +410,12 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   user.passwordChangedAt = Date.now();
 
   await user.save();
+
+  // ---- Notification logic added here ----
+  await createNotification(user._id, "reset_password", {
+    message: "Your password was reset successfully.",
+  });
+  // ---------------------------------------
 
   // 6) Generate token and send it to the user
   const token = signToken(user._id);

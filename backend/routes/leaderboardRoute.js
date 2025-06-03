@@ -30,7 +30,7 @@ router.post(
   allowedTo("system_responsible", "club_responsible"),
   createLeaderboardValidator,
   createLeaderboard
-);
+); /* */
 
 // Get all leaderboards
 router.get(
