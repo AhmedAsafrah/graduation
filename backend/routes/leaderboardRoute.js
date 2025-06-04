@@ -18,7 +18,6 @@ const {
 
 const {
   restrictToResourceOwner,
-  restrictToClubManager,
 } = require("../middleware/restrictResourceMiddleware");
 
 const LeaderboardModel = require("../models/leaderboardModel");

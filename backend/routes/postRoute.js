@@ -30,6 +30,8 @@ const {
 const { getPostsByClubValidator } = require("../validators/clubValidator");
 const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
 const upload = require("../utils/multerConfig");
+const LikeModel = require("../models/likeModel");
+const { createNotification } = require("../services/notificationService");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
@@ -75,6 +77,22 @@ router.post(
       }
       post.comments.push(comment._id);
       await post.save();
+
+      // --- Notification logic for users who liked the post ---
+      const likes = await LikeModel.find({
+        targetType: "post",
+        targetId: post._id,
+      }).populate("user", "name");
+      const commenterName = req.user.name;
+      const notifications = likes
+        .filter((like) => like.user)
+        .map((like) =>
+          createNotification(like.user._id, "post_commented", {
+            message: `${commenterName} commented on a post you liked 🚀`,
+          })
+        );
+      await Promise.all(notifications);
+      // -------------------------------------------------------
 
       res.status(201).json({
         status: "success",

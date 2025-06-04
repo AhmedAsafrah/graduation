@@ -5,6 +5,9 @@ const AppError = require("../utils/appError");
 const PostModel = require("../models/postModel");
 const CommentModel = require("../models/commentModel");
 const cloudinary = require("../utils/cloudinaryConfig");
+const { createNotification } = require("./notificationService");
+const userModel = require("../models/userModel");
+const clubModel = require("../models/clubModel");
 
 exports.createPost = asyncHandler(async (req, res, next) => {
   const { title, content, author, club } = req.body;
@@ -18,6 +21,36 @@ exports.createPost = asyncHandler(async (req, res, next) => {
     image,
     club,
   });
+
+  // ---- Notification logic ----
+  try {
+    if (req.user.role === "system_responsible") {
+      // Notify everyone in the system
+      const users = await userModel.find({}, "_id");
+      const notifications = users.map((user) =>
+        createNotification(user._id, "post_created", {
+          message: `A new post was created by the manager, Check it out!`,
+        })
+      );
+      await Promise.all(notifications);
+    } else if (req.user.role === "club_responsible" && club) {
+      const clubDoc = await clubModel
+        .findById(club)
+        .populate("members", "_id role");
+      if (clubDoc && clubDoc.members && clubDoc.members.length > 0) {
+        // Notify all members (students and club_responsible)
+        const notifications = clubDoc.members.map((member) =>
+          createNotification(member._id, "post_created", {
+            message: `A new post was added in your club "${clubDoc.name}".`,
+          })
+        );
+        await Promise.all(notifications);
+      }
+    }
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+  // ---------------------------
 
   res.status(201).json({
     status: "success",
