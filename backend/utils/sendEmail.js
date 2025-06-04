@@ -2,18 +2,6 @@ const nodemailer = require("nodemailer");
 const AppError = require("../utils/appError");
 
 const sendEmail = async (options) => {
-//   console.log("📧 Starting sendEmail function...");
-//   console.log("📧 Email Options:", options);
-//   console.log("📧 Transporter Config:", {
-//     host: process.env.EMAIL_HOST,
-//     port: process.env.EMAIL_PORT,
-//     secure: true,
-//     auth: {
-//       user: process.env.EMAIL_USER,
-//       pass: process.env.EMAIL_PASSWORD ? "****" : "undefined",
-//     },
-//   });
-
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -39,7 +27,7 @@ const sendEmail = async (options) => {
       <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 20px; box-shadow: 0 8px 20px rgba(107, 114, 128, 0.1); overflow: hidden;">
         <tr>
           <td style="background: linear-gradient(90deg, #a5b4fc, #c4b5fd); padding: 40px 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Club Hub PPU</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">PPU Students Clubs</h1>
             <p style="color: #f3e8ff; margin: 10px 0 0; font-size: 16px; font-weight: 400; font-style: italic;">Your Gateway to Campus Life</p>
           </td>
         </tr>
@@ -57,7 +45,9 @@ const sendEmail = async (options) => {
             <div style="background: #f9fafb; padding: 25px 35px; border-radius: 12px; display: inline-block; margin: 30px 0; box-shadow: 0 4px 12px rgba(165, 180, 252, 0.2), 0 0 0 4px rgba(196, 181, 253, 0.1);">
               <p style="color: #6d28d9; font-size: 36px; font-weight: 700; margin: 0; letter-spacing: 5px;">
                 ${
-                  options.message.match(/Your email verification code is: (\d+)/)?.[1] || "N/A"
+                  options.message.match(
+                    /Your email verification code is: (\d+)/
+                  )?.[1] || "N/A"
                 }
               </p>
             </div>
@@ -77,8 +67,7 @@ const sendEmail = async (options) => {
               All rights reserved to the Deanship of Student Affairs, PPU © 2025
             </p>
             <p style="color: #6b7280; font-size: 13px; margin: 12px 0 0;">
-              Questions? <a href="mailto:support@clubhubppu.com" style="color: #6d28d9; text-decoration: none; font-weight: 500;">Contact Support</a>
-            </p>
+            Questions? <a href="mailto:support@ppu.edu.ps" style="color: #6d28d9; text-decoration: none; font-weight: 500;">Contact Support</a>            </p>
           </td>
         </tr>
       </table>
@@ -86,7 +75,7 @@ const sendEmail = async (options) => {
     </html>
     `;
   } else {
-    // Password reset template 
+    // Password reset template
     htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -99,7 +88,7 @@ const sendEmail = async (options) => {
       <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 20px; box-shadow: 0 8px 20px rgba(107, 114, 128, 0.1); overflow: hidden;">
         <tr>
           <td style="background: linear-gradient(90deg, #a5b4fc, #c4b5fd); padding: 40px 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Club Hub PPU</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">PPU Students Clubs</h1>
             <p style="color: #f3e8ff; margin: 10px 0 0; font-size: 16px; font-weight: 400; font-style: italic;">Your Gateway to Campus Life</p>
           </td>
         </tr>
@@ -117,7 +106,8 @@ const sendEmail = async (options) => {
             <div style="background: #f9fafb; padding: 25px 35px; border-radius: 12px; display: inline-block; margin: 30px 0; box-shadow: 0 4px 12px rgba(165, 180, 252, 0.2), 0 0 0 4px rgba(196, 181, 253, 0.1);">
               <p style="color: #6d28d9; font-size: 36px; font-weight: 700; margin: 0; letter-spacing: 5px;">
                 ${
-                  options.message.match(/Your reset code is: (\d+)/)?.[1] || "N/A"
+                  options.message.match(/Your reset code is: (\d+)/)?.[1] ||
+                  "N/A"
                 }
               </p>
             </div>
@@ -137,8 +127,7 @@ const sendEmail = async (options) => {
               All rights reserved to the Deanship of Student Affairs, PPU © 2025
             </p>
             <p style="color: #6b7280; font-size: 13px; margin: 12px 0 0;">
-              Questions? <a href="mailto:support@clubhubppu.com" style="color: #6d28d9; text-decoration: none; font-weight: 500;">Contact Support</a>
-            </p>
+            Questions? <a href="mailto:support@ppu.edu.ps" style="color: #6d28d9; text-decoration: none; font-weight: 500;">Contact Support</a>            </p>
           </td>
         </tr>
       </table>
@@ -148,7 +137,7 @@ const sendEmail = async (options) => {
   }
 
   const mailOptions = {
-    from: `Club Hub PPU <${process.env.EMAIL_USER}>`,
+    from: `PPU Students Clubs <${process.env.EMAIL_USER}>`,
     to: options.email,
     subject: options.subject,
     text: options.message,

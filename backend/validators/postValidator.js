@@ -12,27 +12,39 @@ exports.createPostValidator = [
     .isLength({ min: 5 })
     .withMessage("Content must be at least 5 characters"),
   body("image").optional().isString().withMessage("Image must be a string"),
-  body("club")
-    .notEmpty() // Make club required since a post must belong to a club
-    .withMessage("Club ID is required")
-    .isMongoId()
-    .withMessage("Invalid Club ID format")
-    .custom(async (val, { req }) => {
+  body("club").custom(async (val, { req }) => {
+    // If system_responsible, club is optional
+    if (req.user.role === "system_responsible") {
+      if (!val) return true; // allow missing club
+      // If provided, validate it
+      if (!mongoose.Types.ObjectId.isValid(val)) {
+        throw new Error("Invalid Club ID format");
+      }
       const club = await mongoose.model("Club").findById(val);
       if (!club) {
         throw new Error("Club not found");
       }
-      // If the user is club_responsible, ensure they manage this club
-      if (req.user.role !== "system_responsible") {
-        if (!req.user.managedClub) {
-          throw new Error("You are not assigned to manage any club");
-        }
-        if (req.user.managedClub.toString() !== val.toString()) {
-          throw new Error("You are not authorized to post for this club");
-        }
-      }
       return true;
-    }),
+    }
+    // For club_responsible, club is required and must match managedClub
+    if (!val) {
+      throw new Error("Club ID is required for club_responsible");
+    }
+    if (!mongoose.Types.ObjectId.isValid(val)) {
+      throw new Error("Invalid Club ID format");
+    }
+    const club = await mongoose.model("Club").findById(val);
+    if (!club) {
+      throw new Error("Club not found");
+    }
+    if (!req.user.managedClub) {
+      throw new Error("You are not assigned to manage any club");
+    }
+    if (req.user.managedClub.toString() !== val.toString()) {
+      throw new Error("You are not authorized to post for this club");
+    }
+    return true;
+  }),
   validatorMiddleware,
 ];
 

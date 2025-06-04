@@ -14,13 +14,16 @@ exports.createPost = asyncHandler(async (req, res, next) => {
 
   const image = req.files?.image ? req.files.image[0].path : undefined;
 
-  const post = await PostModel.create({
+  // Only include club if provided (for system_responsible, club can be undefined)
+  const postData = {
     title,
     content,
     author,
     image,
-    club,
-  });
+  };
+  if (club) postData.club = club;
+
+  const post = await PostModel.create(postData);
 
   // ---- Notification logic ----
   try {
@@ -57,7 +60,6 @@ exports.createPost = asyncHandler(async (req, res, next) => {
     data: post,
   });
 });
-
 exports.updatePost = asyncHandler(async (req, res, next) => {
   const { title, content, author, club } = req.body;
 

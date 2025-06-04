@@ -145,4 +145,43 @@ exports.rejectRegistration = async (req, res, next) => {
   }
 };
 
+exports.leaveClub = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const clubId = req.params.clubId;
+
+    // Find the registration
+    const registration = await RegistrationModel.findOne({
+      student: userId,
+      club: clubId,
+      status: "approved",
+    });
+
+    if (!registration) {
+      return next(new AppError("You are not a member of this club", 404));
+    }
+
+    // Remove user from club's members array
+    const club = await ClubModel.findById(clubId);
+    if (!club) {
+      return next(new AppError("Club not found", 404));
+    }
+    club.members = club.members.filter(
+      (memberId) => memberId.toString() !== userId.toString()
+    );
+    await club.save();
+
+    // Delete the registration
+    await RegistrationModel.findByIdAndDelete(registration._id);
+
+    res.status(200).json({
+      status: "success",
+      message: "You have left the club",
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+};
+
+
 exports.getAllRegistrations = factory.getAll(RegistrationModel);

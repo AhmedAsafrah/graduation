@@ -10,6 +10,7 @@ const {
   approveRegistration,
   getAllRegistrations,
   rejectRegistration,
+  leaveClub
 } = require("../services/registrationService");
 
 const {
@@ -41,6 +42,13 @@ router.patch(
   protect,
   allowedTo("club_responsible", "system_responsible"),
   rejectRegistration
+);
+
+router.delete(
+  "/:clubId/leave",
+  protect,
+  allowedTo("student", "club_responsible"),
+  leaveClub
 );
 
 router.get("/", protect, allowedTo("system_responsible"), getAllRegistrations);

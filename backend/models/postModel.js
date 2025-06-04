@@ -12,7 +12,7 @@ const postSchema = new mongoose.Schema(
     club: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Club",
-      required: [true, "Club is required"],
+      required: false,
     },
     comments: [
       {
