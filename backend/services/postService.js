@@ -167,8 +167,10 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
 exports.getPostsByClub = asyncHandler(async (req, res, next) => {
   const { clubId } = req.params;
 
-  // Fetch all posts associated with the specified club and populate the club field
-  const posts = await PostModel.find({ club: clubId }).populate("club");
+  // Fetch all posts associated with the specified club, sort by newest first, and populate the club field
+  const posts = await PostModel.find({ club: clubId })
+    .sort({ createdAt: -1 })
+    .populate("club");
 
   res.status(200).json({
     status: "success",
