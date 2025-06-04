@@ -112,7 +112,7 @@ router.post(
 router.put(
   "/:id",
   protect,
-  allowedTo("student", "club_responsible", "system_responsible"),
+  allowedTo("club_responsible", "system_responsible"),
   setUploadFolder("posts"),
   upload.fields([{ name: "image", maxCount: 1 }]),
   restrictToResourceOwner(PostModel, "author"),

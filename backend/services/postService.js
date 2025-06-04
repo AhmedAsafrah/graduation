@@ -70,17 +70,30 @@ exports.updatePost = asyncHandler(async (req, res, next) => {
   // Prepare the update data
   const updateData = { title, content, author, club };
 
+  // Function to extract public_id from Cloudinary URL
+  const getPublicIdFromUrl = (url) => {
+    if (!url) return null;
+    const parts = url.split("/");
+    const fileName = parts[parts.length - 1].split(".")[0];
+    const folder = parts[parts.length - 2];
+    return `${folder}/${fileName}`;
+  };
+
+  // Handle image removal
+  if (req.body.image === "") {
+    if (post.image) {
+      const oldImagePublicId = getPublicIdFromUrl(post.image);
+      if (oldImagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldImagePublicId);
+        } catch (error) {}
+      }
+    }
+    updateData.image = undefined; // Remove image from post
+  }
+
   // Handle image upload if present
   if (req.files && req.files.image) {
-    // Function to extract public_id from Cloudinary URL
-    const getPublicIdFromUrl = (url) => {
-      if (!url) return null;
-      const parts = url.split("/");
-      const fileName = parts[parts.length - 1].split(".")[0];
-      const folder = parts[parts.length - 2];
-      return `${folder}/${fileName}`;
-    };
-
     // Delete old image from Cloudinary
     if (post.image) {
       const oldImagePublicId = getPublicIdFromUrl(post.image);
