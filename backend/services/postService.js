@@ -148,6 +148,13 @@ exports.getAllPosts = asyncHandler(async (req, res, next) => {
         path: "author",
         select: "_id profilePicture name",
       },
+    })
+    .populate({
+      path: "likes",
+      populate: {
+        path: "user",
+        select: "_id", // Only return the user's _id
+      },
     });
 
   res.status(200).json({
