@@ -21,7 +21,9 @@ exports.signup = asyncHandler(async (req, res, next) => {
   }
 
   // 2) Generate a 6-digit verification code
-  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
   const hashedVerificationCode = crypto
     .createHash("sha256")
     .update(verificationCode)
@@ -111,7 +113,7 @@ exports.verifyEmailCode = asyncHandler(async (req, res, next) => {
 
   // ---- Notification logic added here ----
   await createNotification(user._id, "signup", {
-    message: "Welcome! Your account was created successfully.",
+    message: "مرحبًا! تم إنشاء حسابك بنجاح.",
   });
   // ---------------------------------------
 
@@ -413,7 +415,7 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
   // ---- Notification logic added here ----
   await createNotification(user._id, "reset_password", {
-    message: "Your password was reset successfully.",
+    message: "تم إعادة تعيين كلمة المرور الخاصة بك بنجاح.",
   });
   // ---------------------------------------
 
@@ -543,7 +545,10 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
         try {
           await cloudinary.uploader.destroy(oldProfilePublicId);
         } catch (error) {
-          console.error("Error deleting old profile picture from Cloudinary:", error);
+          console.error(
+            "Error deleting old profile picture from Cloudinary:",
+            error
+          );
         }
       }
     }
@@ -552,7 +557,9 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
     filteredBody.profilePicture = req.files.profilePicture[0].path;
 
     // Invalidate cache for the new profile picture
-    const newProfilePublicId = getPublicIdFromUrl(req.files.profilePicture[0].path);
+    const newProfilePublicId = getPublicIdFromUrl(
+      req.files.profilePicture[0].path
+    );
     if (newProfilePublicId) {
       try {
         await cloudinary.api.resource(newProfilePublicId, { invalidate: true });

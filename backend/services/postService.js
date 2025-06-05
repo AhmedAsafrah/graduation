@@ -32,7 +32,7 @@ exports.createPost = asyncHandler(async (req, res, next) => {
       const users = await userModel.find({}, "_id");
       const notifications = users.map((user) =>
         createNotification(user._id, "post_created", {
-          message: `A new post was created by the manager, Check it out!`,
+          message: `تم إنشاء منشور جديد بواسطة المدير، تفقده الآن!`,
         })
       );
       await Promise.all(notifications);
@@ -43,7 +43,7 @@ exports.createPost = asyncHandler(async (req, res, next) => {
       if (clubDoc && clubDoc.members && clubDoc.members.length > 0) {
         const notifications = clubDoc.members.map((member) =>
           createNotification(member._id, "post_created", {
-            message: `A new post was added in your club "${clubDoc.name}".`,
+            message: `تمت إضافة منشور جديد في ناديك "${clubDoc.name}".`,
           })
         );
         await Promise.all(notifications);

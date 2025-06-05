@@ -42,6 +42,19 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     author,
   });
 
+  // ---- Notification logic ----
+  try {
+    const users = await userModel.find({}, "_id");
+    const notifications = users.map((user) =>
+      createNotification(user._id, "event_created", {
+        message: `تم إنشاء فعالية جديدة "${event.title}"!`,
+      })
+    );
+    await Promise.all(notifications);
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+
   res.status(201).json({
     status: "success",
     data: event,

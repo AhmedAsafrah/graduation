@@ -88,7 +88,7 @@ router.post(
         .filter((like) => like.user)
         .map((like) =>
           createNotification(like.user._id, "post_commented", {
-            message: `${commenterName} commented on a post you liked 🚀`,
+            message: `${commenterName} علق على منشور أعجبك.`,
           })
         );
       await Promise.all(notifications);

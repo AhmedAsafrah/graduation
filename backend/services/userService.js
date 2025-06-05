@@ -23,8 +23,25 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
       )
     );
   }
+
+  // If managedClub is set in the request, set role to club_responsible
+  if (req.body.managedClub) {
+    req.body.role = "club_responsible";
+  }
+
   Object.assign(document, req.body);
   await document.save();
+
+  // If user is now a club_responsible and has managedClub, add them to club members
+  if (
+    document.role === "club_responsible" &&
+    document.managedClub
+  ) {
+    await ClubModel.findByIdAndUpdate(
+      document.managedClub,
+      { $addToSet: { members: document._id } } // $addToSet prevents duplicates
+    );
+  }
 
   res.status(200).json({ data: document });
 });

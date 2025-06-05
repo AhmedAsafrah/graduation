@@ -36,7 +36,7 @@ exports.createClub = asyncHandler(async (req, res, next) => {
     const users = await UserModel.find({}, "_id");
     const notifications = users.map((user) => {
       return createNotification(user._id, "club_created", {
-        message: `A new club "${club.name}" was created!`,
+        message: `تم إنشاء نادي جديد "${club.name}"!`,
       });
     });
     await Promise.all(notifications);

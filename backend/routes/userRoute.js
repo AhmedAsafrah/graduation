@@ -27,6 +27,7 @@ const {
   deleteUserValidator,
   changeUserPasswordValidator,
 } = require("../validators/userValidator");
+const upload = require("../utils/multerConfig");
 
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
@@ -58,7 +59,8 @@ router.get(
 router.put(
   "/:id",
   protect,
-  restrictToResourceOwner(UserModel, "_id"),
+  allowedTo("system_responsible", "club_responsible"),
+  upload.single("profilePicture"), // <-- add this
   updateUserValidator,
   updateUser
 );

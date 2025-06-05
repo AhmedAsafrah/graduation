@@ -40,7 +40,7 @@ exports.createLeaderboard = asyncHandler(async (req, res, next) => {
     const users = await UserModel.find({}, "_id");
     const notifications = users.map((user) =>
       createNotification(user._id, "leaderboard_created", {
-        message: `A new leaderboard "${leaderboard.name}" has been created!`,
+        message: `تم إنشاء لوحة المتصدرين الجديدة "${leaderboard.name}"!`,
       })
     );
     await Promise.all(notifications);
