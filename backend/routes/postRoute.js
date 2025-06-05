@@ -40,7 +40,7 @@ router.post(
   protect,
   allowedTo("club_responsible", "system_responsible"),
   setUploadFolder("posts"),
-  upload.fields([{ name: "image", maxCount: 1 }]),
+  upload.array("images", 5),
   setAuthor,
   createPostValidator,
   createPost
@@ -114,7 +114,7 @@ router.put(
   protect,
   allowedTo("club_responsible", "system_responsible"),
   setUploadFolder("posts"),
-  upload.fields([{ name: "image", maxCount: 1 }]),
+  upload.array("images", 5), // Accept up to 5 images with the key "images"
   restrictToResourceOwner(PostModel, "author"),
   updatePostValidator,
   updatePost

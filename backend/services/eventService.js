@@ -3,6 +3,7 @@ const factory = require("./handlersFactory");
 const asyncHandler = require("express-async-handler");
 const { createNotification } = require("./notificationService");
 const userModel = require("../models/userModel");
+const cloudinary = require("../utils/cloudinaryConfig");
 
 exports.createEvent = asyncHandler(async (req, res, next) => {
   const {
@@ -16,7 +17,18 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  const image = req.files?.image ? req.files.image[0].path : undefined;
+  // Upload all images to Cloudinary and collect their URLs
+  let images = [];
+  if (req.files && req.files.length > 0) {
+    images = await Promise.all(
+      req.files.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "events",
+        });
+        return result.secure_url;
+      })
+    );
+  }
 
   const event = await EventModel.create({
     title,
@@ -25,24 +37,10 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     startTime,
     endTime,
     location,
-    image,
+    images, // array of Cloudinary URLs
     club,
     author,
   });
-
-  // ---- Notification logic added here ----
-  try {
-    const users = await userModel.find({}, "_id");
-    const notifications = users.map((user) =>
-      createNotification(user._id, "event_created", {
-        message: `A new event "${event.title}" was created!`,
-      })
-    );
-    await Promise.all(notifications);
-  } catch (err) {
-    console.error("Notification error:", err);
-  }
-  // ---------------------------------------
 
   res.status(201).json({
     status: "success",
@@ -79,6 +77,7 @@ exports.getAllEvents = asyncHandler(async (req, res, next) => {
     data: eventsWithCommentDescriptions,
   });
 });
+
 exports.getEvent = asyncHandler(async (req, res, next) => {
   const event = await EventModel.findById(req.params.id)
     .populate("club", "name description") // Populate club with specific fields
@@ -106,7 +105,7 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  // Fetch the existing event to get the old image URL
+  // Fetch the existing event to get the old image URLs
   const event = await EventModel.findById(req.params.id);
   if (!event) {
     return next(new Error("No event found with that ID"));
@@ -124,9 +123,54 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     author,
   };
 
-  // Handle image upload if present
-  if (req.files) {
-    // ...existing image handling code...
+  // Helper to extract public_id from Cloudinary URL
+  const getPublicIdFromUrl = (url) => {
+    if (!url) return null;
+    const parts = url.split("/");
+    const fileName = parts[parts.length - 1].split(".")[0];
+    const folder = parts[parts.length - 2];
+    return `${folder}/${fileName}`;
+  };
+
+  // Remove all images if requested
+  if (req.body.images === "") {
+    if (event.images && event.images.length > 0) {
+      for (const url of event.images) {
+        const oldImagePublicId = getPublicIdFromUrl(url);
+        if (oldImagePublicId) {
+          try {
+            await cloudinary.uploader.destroy(oldImagePublicId);
+          } catch (error) {}
+        }
+      }
+    }
+    updateData.images = [];
+  }
+
+  // Handle new image uploads (replace all images)
+  if (req.files && req.files.length > 0) {
+    // Optionally: remove old images first (if not already removed above)
+    if (!req.body.images || req.body.images !== "") {
+      if (event.images && event.images.length > 0) {
+        for (const url of event.images) {
+          const oldImagePublicId = getPublicIdFromUrl(url);
+          if (oldImagePublicId) {
+            try {
+              await cloudinary.uploader.destroy(oldImagePublicId);
+            } catch (error) {}
+          }
+        }
+      }
+    }
+    const newImages = await Promise.all(
+      req.files.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "events",
+        });
+        return result.secure_url;
+      })
+    );
+    updateData.images = newImages;
   }
 
   // Update the event with new data
@@ -136,7 +180,7 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     { new: true, runValidators: true }
   );
 
-  // ---- Notification logic added here ----
+  // ---- Notification logic ----
   try {
     const users = await userModel.find({}, "_id");
     const notifications = users.map((user) =>
@@ -148,7 +192,6 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
   } catch (err) {
     console.error("Notification error:", err);
   }
-  // ---------------------------------------
 
   res.status(200).json({
     status: "success",
