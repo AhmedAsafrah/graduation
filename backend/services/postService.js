@@ -11,15 +11,16 @@ const clubModel = require("../models/clubModel");
 
 exports.createPost = asyncHandler(async (req, res, next) => {
   const { title, content, author, club } = req.body;
+  // Get Cloudinary URLs directly from multer's req.files
+  const images = req.files
+    ? req.files.map((file) => file.path || file.url)
+    : [];
 
-  const image = req.files?.image ? req.files.image[0].path : undefined;
-
-  // Only include club if provided (for system_responsible, club can be undefined)
   const postData = {
     title,
     content,
     author,
-    image,
+    images, // array of Cloudinary URLs
   };
   if (club) postData.club = club;
 
@@ -28,7 +29,6 @@ exports.createPost = asyncHandler(async (req, res, next) => {
   // ---- Notification logic ----
   try {
     if (req.user.role === "system_responsible") {
-      // Notify everyone in the system
       const users = await userModel.find({}, "_id");
       const notifications = users.map((user) =>
         createNotification(user._id, "post_created", {
@@ -41,7 +41,6 @@ exports.createPost = asyncHandler(async (req, res, next) => {
         .findById(club)
         .populate("members", "_id role");
       if (clubDoc && clubDoc.members && clubDoc.members.length > 0) {
-        // Notify all members (students and club_responsible)
         const notifications = clubDoc.members.map((member) =>
           createNotification(member._id, "post_created", {
             message: `A new post was added in your club "${clubDoc.name}".`,
@@ -53,17 +52,17 @@ exports.createPost = asyncHandler(async (req, res, next) => {
   } catch (err) {
     console.error("Notification error:", err);
   }
-  // ---------------------------
 
   res.status(201).json({
     status: "success",
     data: post,
   });
 });
+
 exports.updatePost = asyncHandler(async (req, res, next) => {
   const { title, content, author, club } = req.body;
 
-  // Fetch the existing post to get the old image URL
+  // Fetch the existing post to get the old image URLs
   const post = await PostModel.findById(req.params.id);
   if (!post) {
     return next(new Error("No post found with that ID"));
@@ -81,39 +80,45 @@ exports.updatePost = asyncHandler(async (req, res, next) => {
     return `${folder}/${fileName}`;
   };
 
-  // Handle image removal
-  if (req.body.image === "") {
-    if (post.image) {
-      const oldImagePublicId = getPublicIdFromUrl(post.image);
-      if (oldImagePublicId) {
-        try {
-          await cloudinary.uploader.destroy(oldImagePublicId);
-        } catch (error) {}
+  // Handle image removal (remove all images if requested)
+  if (req.body.images === "") {
+    if (post.images && post.images.length > 0) {
+      for (const url of post.images) {
+        const oldImagePublicId = getPublicIdFromUrl(url);
+        if (oldImagePublicId) {
+          try {
+            await cloudinary.uploader.destroy(oldImagePublicId);
+          } catch (error) {}
+        }
       }
     }
-    updateData.image = undefined; // Remove image from post
+    updateData.images = [];
   }
 
-  // Handle image upload if present
-  if (req.files && req.files.image) {
-    // Delete old image from Cloudinary
-    if (post.image) {
-      const oldImagePublicId = getPublicIdFromUrl(post.image);
-      if (oldImagePublicId) {
-        try {
-          await cloudinary.uploader.destroy(oldImagePublicId);
-        } catch (error) {}
+  // Handle new image uploads (replace all images)
+  if (req.files && req.files.length > 0) {
+    // Optionally: remove old images first (if not already removed above)
+    if (!req.body.images || req.body.images !== "") {
+      if (post.images && post.images.length > 0) {
+        for (const url of post.images) {
+          const oldImagePublicId = getPublicIdFromUrl(url);
+          if (oldImagePublicId) {
+            try {
+              await cloudinary.uploader.destroy(oldImagePublicId);
+            } catch (error) {}
+          }
+        }
       }
     }
-    // Set new image path
-    updateData.image = req.files.image[0].path;
-    // Optionally invalidate new image in Cloudinary
-    const newImagePublicId = getPublicIdFromUrl(req.files.image[0].path);
-    if (newImagePublicId) {
-      try {
-        await cloudinary.api.resource(newImagePublicId, { invalidate: true });
-      } catch (error) {}
-    }
+    const newImages = await Promise.all(
+      req.files.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "posts",
+        });
+        return result.secure_url;
+      })
+    );
+    updateData.images = newImages;
   }
 
   // Update the post with new data

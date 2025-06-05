@@ -8,7 +8,7 @@ const postSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Author is required"],
     },
-    image: { type: String, required: false },
+    images: [String], // instead of image: String
     club: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Club",

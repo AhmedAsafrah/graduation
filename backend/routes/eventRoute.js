@@ -49,7 +49,7 @@ router.post(
   protect,
   allowedTo("club_responsible", "system_responsible"),
   setUploadFolder("events"),
-  upload.fields([{ name: "image", maxCount: 1 }]),
+  upload.array("images", 5),
   setAuthor,
   createEventValidator,
   createEvent
@@ -124,10 +124,10 @@ router.put(
   allowedTo("club_responsible", "system_responsible"),
   restrictToResourceOwner(EventModel, "author"),
   setUploadFolder("events"),
-  upload.fields([{ name: "image", maxCount: 1 }]),
+  upload.array("images", 5), // <-- this line changed
   updateEventValidator,
   updateEvent
-); /** */
+);
 
 router.delete(
   "/:id",
