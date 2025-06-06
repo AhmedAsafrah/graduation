@@ -2,6 +2,7 @@ const RegistrationModel = require("../models/registrationModel");
 const ClubModel = require("../models/clubModel");
 const AppError = require("../utils/appError");
 const factory = require("./handlersFactory");
+const expressAsyncHandler = require("express-async-handler");
 
 exports.createRegistration = async (req, res, next) => {
   try {
@@ -21,7 +22,10 @@ exports.createRegistration = async (req, res, next) => {
 
     // If the user is a club_responsible, ensure they aren't registering for their own club
     const user = req.user;
-    if (user.role === "club_responsible" && user.managedClub.toString() === club) {
+    if (
+      user.role === "club_responsible" &&
+      user.managedClub.toString() === club
+    ) {
       return next(
         new AppError("You cannot register for a club you manage", 400)
       );
@@ -62,15 +66,14 @@ exports.approveRegistration = async (req, res, next) => {
 
     // Check if the logged-in user is the club admin or system_responsible
     const user = req.user;
-    const isClubAdmin = user.role === "club_responsible" && user.managedClub.toString() === registration.club.toString();
+    const isClubAdmin =
+      user.role === "club_responsible" &&
+      user.managedClub.toString() === registration.club.toString();
     const isSystemResponsible = user.role === "system_responsible";
 
     if (!isClubAdmin && !isSystemResponsible) {
       return next(
-        new AppError(
-          "You are not authorized to approve this registration",
-          403
-        )
+        new AppError("You are not authorized to approve this registration", 403)
       );
     }
 
@@ -84,7 +87,7 @@ exports.approveRegistration = async (req, res, next) => {
         club.members = [];
       }
       const studentId = registration.student.toString();
-      if (!club.members.map(id => id.toString()).includes(studentId)) {
+      if (!club.members.map((id) => id.toString()).includes(studentId)) {
         club.members.push(registration.student);
         await club.save();
       }
@@ -118,15 +121,14 @@ exports.rejectRegistration = async (req, res, next) => {
 
     // Check if the logged-in user is the club admin or system_responsible
     const user = req.user;
-    const isClubAdmin = user.role === "club_responsible" && user.managedClub.toString() === registration.club.toString();
+    const isClubAdmin =
+      user.role === "club_responsible" &&
+      user.managedClub.toString() === registration.club.toString();
     const isSystemResponsible = user.role === "system_responsible";
 
     if (!isClubAdmin && !isSystemResponsible) {
       return next(
-        new AppError(
-          "You are not authorized to reject this registration",
-          403
-        )
+        new AppError("You are not authorized to reject this registration", 403)
       );
     }
 
@@ -183,5 +185,16 @@ exports.leaveClub = async (req, res, next) => {
   }
 };
 
+exports.getAllRegistrations = expressAsyncHandler(async (req, res, next) => {
+  const registrations = await RegistrationModel.find()
+    .populate({ path: "club", select: "name" })
+    .populate({ path: "student", select: "name email" });
 
-exports.getAllRegistrations = factory.getAll(RegistrationModel);
+  const filtered = registrations.filter((reg) => reg.student);
+
+  res.status(200).json({
+    status: "success",
+    results: filtered.length,
+    data: filtered,
+  });
+});
