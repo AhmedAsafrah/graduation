@@ -17,7 +17,7 @@ const {
   deleteUser,
   changeUserPassword,
   searchStudentsAndClubs,
-  toggleUserActive
+  toggleUserActive,
 } = require("../services/userService");
 
 const {
@@ -46,7 +46,12 @@ router.put(
   toggleUserActive
 );
 
-router.get("/", protect, allowedTo("system_responsible"), getAllUsers);
+router.get(
+  "/",
+  protect,
+  allowedTo("system_responsible", "club_responsible"),
+  getAllUsers
+);
 
 router.get(
   "/:id",
