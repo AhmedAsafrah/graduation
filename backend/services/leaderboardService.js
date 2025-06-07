@@ -57,6 +57,7 @@ exports.createLeaderboard = asyncHandler(async (req, res, next) => {
 
 exports.getAllLeaderboards = asyncHandler(async (req, res, next) => {
   const leaderboards = await LeaderboardModel.find()
+    .sort({ createdAt: -1 }) // Sort by newest first
     .populate({ path: "top1", select: "email name profilePicture" })
     .populate({ path: "top2", select: "email name profilePicture" })
     .populate({ path: "top3", select: "email name profilePicture" });
