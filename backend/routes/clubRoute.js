@@ -34,6 +34,8 @@ const setUploadFolder = require("../middleware/setUploadFolderMiddleware");
 
 const { protect, allowedTo } = authService;
 
+const registrationService = require("../services/registrationService");
+
 ///////////////////////////////////////////////////// ******* ROUTES ******* /////////////////////////////////////////////////////
 
 // Create club
@@ -49,6 +51,13 @@ router.post(
   createClubValidator,
   createClub
 ); /* */
+
+router.get(
+  "/:clubId/registrations",
+  protect,
+  allowedTo("club_responsible", "system_responsible"),
+  registrationService.getRegistrationsByClub
+);
 
 router.get(
   "/:clubId/pending-requests",

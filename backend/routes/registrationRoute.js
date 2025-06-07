@@ -10,7 +10,7 @@ const {
   approveRegistration,
   getAllRegistrations,
   rejectRegistration,
-  leaveClub
+  leaveClub,
 } = require("../services/registrationService");
 
 const {

@@ -3,6 +3,7 @@ const ClubModel = require("../models/clubModel");
 const AppError = require("../utils/appError");
 const factory = require("./handlersFactory");
 const expressAsyncHandler = require("express-async-handler");
+const { createNotification } = require("./notificationService");
 
 exports.createRegistration = async (req, res, next) => {
   try {
@@ -92,6 +93,17 @@ exports.approveRegistration = async (req, res, next) => {
         await club.save();
       }
     }
+
+    // ---- Notify the user who joined the club ----
+    try {
+      await createNotification(registration.student, "club_approved", {
+        message: `تم قبول طلبك للانضمام إلى نادي "${club.name}".`,
+        club: club._id,
+      });
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+    // --------------------------------------------
 
     res.status(200).json({
       status: "success",
@@ -196,5 +208,19 @@ exports.getAllRegistrations = expressAsyncHandler(async (req, res, next) => {
     status: "success",
     results: filtered.length,
     data: filtered,
+  });
+});
+
+exports.getRegistrationsByClub = expressAsyncHandler(async (req, res, next) => {
+  const clubId = req.params.clubId;
+
+  const registrations = await RegistrationModel.find({ club: clubId })
+    .populate({ path: "club", select: "name" })
+    .populate({ path: "student", select: "name email" });
+
+  res.status(200).json({
+    status: "success",
+    results: registrations.length,
+    data: registrations,
   });
 });

@@ -27,6 +27,7 @@ const notificationSchema = new mongoose.Schema(
         "system",
         "announcement",
         "club_custom",
+        "club_approved",
       ],
       default: "other",
     },
