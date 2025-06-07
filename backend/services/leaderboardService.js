@@ -55,8 +55,19 @@ exports.createLeaderboard = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Use factory for generic CRUD operations
-exports.getAllLeaderboards = factory.getAll(LeaderboardModel);
+exports.getAllLeaderboards = asyncHandler(async (req, res, next) => {
+  const leaderboards = await LeaderboardModel.find()
+    .populate({ path: "top1", select: "email name profilePicture" })
+    .populate({ path: "top2", select: "email name profilePicture" })
+    .populate({ path: "top3", select: "email name profilePicture" });
+
+  res.status(200).json({
+    status: "success",
+    results: leaderboards.length,
+    data: leaderboards,
+  });
+});
+
 exports.getLeaderboard = factory.getOne(LeaderboardModel);
 exports.updateLeaderboard = factory.updateOne(LeaderboardModel);
 exports.deleteLeaderboard = factory.deleteOne(LeaderboardModel);

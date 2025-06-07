@@ -48,16 +48,7 @@ const leaderboardSchema = new mongoose.Schema(
 );
 
 // Populate user details for top1, top2, top3
-leaderboardSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: "top1 top2 top3",
-    select: "name profilePicture",
-  }).populate({
-    path: "event",
-    select: "name date",
-  });
-  next();
-});
+
 
 const Leaderboard = mongoose.model("Leaderboard", leaderboardSchema);
 
