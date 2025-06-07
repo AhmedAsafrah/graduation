@@ -51,6 +51,11 @@ router.delete(
   leaveClub
 );
 
-router.get("/", protect, allowedTo("system_responsible"), getAllRegistrations);
+router.get(
+  "/",
+  protect,
+  allowedTo("system_responsible", "club_responsible"),
+  getAllRegistrations
+);
 
 module.exports = router;
