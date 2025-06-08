@@ -63,6 +63,7 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
 
 exports.getAllEvents = asyncHandler(async (req, res, next) => {
   const events = await EventModel.find()
+    .sort({ date: -1 }) // Sort by date descending
     .populate("club", "name description")
     .populate("author", "name email")
     .populate({
@@ -90,7 +91,6 @@ exports.getAllEvents = asyncHandler(async (req, res, next) => {
     data: eventsWithCommentDescriptions,
   });
 });
-
 exports.getEvent = asyncHandler(async (req, res, next) => {
   const event = await EventModel.findById(req.params.id)
     .populate("club", "name description") // Populate club with specific fields
