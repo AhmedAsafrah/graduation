@@ -9,16 +9,36 @@ exports.createRegistration = async (req, res, next) => {
   try {
     const { student, club } = req.body;
 
-    // Check if the student is already registered for this club
+    // Check if the student already has a registration for this club
     const existingRegistration = await RegistrationModel.findOne({
       student,
       club,
     });
 
-    if (existingRegistration) {
+    // Block if status is "pending" or "approved"
+    if (
+      existingRegistration &&
+      (existingRegistration.status === "pending" ||
+        existingRegistration.status === "approved")
+    ) {
       return next(
         new AppError("You have already registered for this club", 400)
       );
+    }
+
+    // If rejected, allow re-apply by updating status to "pending"
+    if (
+      existingRegistration &&
+      existingRegistration.status === "rejected"
+    ) {
+      existingRegistration.status = "pending";
+      await existingRegistration.save();
+      return res.status(200).json({
+        status: "success",
+        data: {
+          registration: existingRegistration,
+        },
+      });
     }
 
     // If the user is a club_responsible, ensure they aren't registering for their own club
