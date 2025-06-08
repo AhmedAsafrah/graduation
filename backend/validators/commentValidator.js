@@ -8,9 +8,7 @@ exports.createCommentValidator = [
     .notEmpty()
     .withMessage("Content is required")
     .isString()
-    .withMessage("Content must be a string")
-    .isLength({ min: 5 })
-    .withMessage("Content must be at least 5 characters"),
+    .withMessage("Content must be a string"),
   check("role")
     .optional() // Make role optional
     .isIn(["post", "event"])
