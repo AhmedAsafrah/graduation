@@ -175,10 +175,9 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
   // 2) Get the number of likes (length of the likes array)
   const numLikes = post.likes.length;
 
-  // 3) Get the number of comments (count documents in the Comment model)
-  const numComments = await CommentModel.countDocuments({
-    post: req.params.id,
-  });
+  // 3) Get the sorted comments (newest first)
+  const comments = await CommentModel.find({ post: req.params.id })
+    .sort({ createdAt: -1 });
 
   // 4) Send response
   res.status(200).json({
@@ -186,7 +185,8 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
     data: {
       postId: req.params.id,
       likes: numLikes,
-      comments: numComments,
+      commentsCount: comments.length,
+      comments, // return sorted comments array
     },
   });
 });
