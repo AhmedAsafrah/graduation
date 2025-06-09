@@ -4,9 +4,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 
 // security 
-const rateLimit = require("express-rate-limit");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss");
+
 
 const clubRoute = require("./routes/clubRoute");
 const userRoute = require("./routes/userRoute");
@@ -30,24 +28,12 @@ dbConnection();
 
 const app = express();
 
-// Rate limiter middleware (applies to all requests)
-const limiter = rateLimit({
-  max: 100, 
-  windowMs: 15 * 60 * 1000, 
-  message: "Too many requests from this IP, please try again in an hour!",
-});
-app.use(limiter);
+
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Custom sanitize middleware to avoid req.query setter issue
-app.use((req, res, next) => {
-  if (req.body) mongoSanitize.sanitize(req.body);
-  if (req.params) mongoSanitize.sanitize(req.params);
-  next();
-});
 
 app.use(
   cors({
