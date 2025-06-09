@@ -63,7 +63,7 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
 
 exports.getAllEvents = asyncHandler(async (req, res, next) => {
   const events = await EventModel.find()
-    .sort({ date: -1 }) // Sort by date descending
+    .sort({ date: -1, createdAt: -1 }) // Sort by date descending, then by creation time descending
     .populate("club", "name description")
     .populate("author", "name email")
     .populate({
