@@ -175,9 +175,13 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
   // 2) Get the number of likes (length of the likes array)
   const numLikes = post.likes.length;
 
-  // 3) Get the sorted comments (newest first)
+  // 3) Get the sorted comments (newest first) and populate author fields
   const comments = await CommentModel.find({ post: req.params.id })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "author",
+      select: "name profilePicture", // Adjust field name if needed
+    });
 
   // 4) Send response
   res.status(200).json({
@@ -186,7 +190,7 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
       postId: req.params.id,
       likes: numLikes,
       commentsCount: comments.length,
-      comments, // return sorted comments array
+      comments, // return sorted comments array with populated author
     },
   });
 });
