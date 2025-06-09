@@ -17,17 +17,13 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  // Upload all images to Cloudinary and collect their URLs
-  let images = [];
-  if (req.files && req.files.length > 0) {
-    images = await Promise.all(
-      req.files.map(async (file) => {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: "events",
-        });
-        return result.secure_url;
-      })
-    );
+  // Upload single image to Cloudinary and get its URL
+  let image = "";
+  if (req.file) {
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "events",
+    });
+    image = result.secure_url;
   }
 
   const event = await EventModel.create({
@@ -37,7 +33,7 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     startTime,
     endTime,
     location,
-    images, // array of Cloudinary URLs
+    image, // single Cloudinary URL
     club,
     author,
   });
@@ -63,7 +59,7 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
 
 exports.getAllEvents = asyncHandler(async (req, res, next) => {
   const events = await EventModel.find()
-    .sort({ date: -1, createdAt: -1 }) // Sort by date descending, then by creation time descending
+    .sort({ date: -1, createdAt: -1 })
     .populate("club", "name description")
     .populate("author", "name email")
     .populate({
@@ -91,10 +87,11 @@ exports.getAllEvents = asyncHandler(async (req, res, next) => {
     data: eventsWithCommentDescriptions,
   });
 });
+
 exports.getEvent = asyncHandler(async (req, res, next) => {
   const event = await EventModel.findById(req.params.id)
-    .populate("club", "name description") // Populate club with specific fields
-    .populate("author", "name email"); // Populate author with specific fields
+    .populate("club", "name description")
+    .populate("author", "name email");
 
   if (!event) {
     return next(new Error("No event found with that ID"));
@@ -118,7 +115,7 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  // Fetch the existing event to get the old image URLs
+  // Fetch the existing event to get the old image URL
   const event = await EventModel.findById(req.params.id);
   if (!event) {
     return next(new Error("No event found with that ID"));
@@ -145,45 +142,34 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     return `${folder}/${fileName}`;
   };
 
-  // Remove all images if requested
-  if (req.body.images === "") {
-    if (event.images && event.images.length > 0) {
-      for (const url of event.images) {
-        const oldImagePublicId = getPublicIdFromUrl(url);
-        if (oldImagePublicId) {
-          try {
-            await cloudinary.uploader.destroy(oldImagePublicId);
-          } catch (error) {}
-        }
+  // Remove image if requested
+  if (req.body.image === "") {
+    if (event.image) {
+      const oldImagePublicId = getPublicIdFromUrl(event.image);
+      if (oldImagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldImagePublicId);
+        } catch (error) {}
       }
     }
-    updateData.images = [];
+    updateData.image = "";
   }
 
-  // Handle new image uploads (replace all images)
-  if (req.files && req.files.length > 0) {
-    // Optionally: remove old images first (if not already removed above)
-    if (!req.body.images || req.body.images !== "") {
-      if (event.images && event.images.length > 0) {
-        for (const url of event.images) {
-          const oldImagePublicId = getPublicIdFromUrl(url);
-          if (oldImagePublicId) {
-            try {
-              await cloudinary.uploader.destroy(oldImagePublicId);
-            } catch (error) {}
-          }
-        }
+  // Handle new image upload (replace old image)
+  if (req.file) {
+    // Remove old image first
+    if (event.image) {
+      const oldImagePublicId = getPublicIdFromUrl(event.image);
+      if (oldImagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldImagePublicId);
+        } catch (error) {}
       }
     }
-    const newImages = await Promise.all(
-      req.files.map(async (file) => {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: "events",
-        });
-        return result.secure_url;
-      })
-    );
-    updateData.images = newImages;
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "events",
+    });
+    updateData.image = result.secure_url;
   }
 
   // Update the event with new data
@@ -220,7 +206,7 @@ exports.getEventsByClub = asyncHandler(async (req, res, next) => {
   const events = await EventModel.find({ club: clubId }).populate(
     "author",
     "name email"
-  ); // Populate author with specific fields
+  );
 
   res.status(200).json({
     status: "success",
@@ -235,11 +221,37 @@ exports.getComingSoonEvents = asyncHandler(async (req, res, next) => {
     date: { $gt: currentDate },
   })
     .sort("date")
-    .populate("club", "name description") // Populate club with specific fields
-    .populate("author", "name email"); // Populate author with specific fields
+    .populate("club", "name description")
+    .populate("author", "name email");
 
   res.status(200).json({
     status: "success",
     data: comingSoonEvents,
+  });
+});
+
+exports.getEventEngagement = asyncHandler(async (req, res, next) => {
+  const event = await EventModel.findById(req.params.id);
+
+  if (!event) {
+    return next(new Error("No event found with that ID"));
+  }
+
+  const numLikes = event.likes ? event.likes.length : 0;
+
+  const comments = await EventModel.populate(event, {
+    path: "comments",
+    options: { sort: { createdAt: -1 } },
+    populate: { path: "author", select: "name email profilePicture" },
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      eventId: req.params.id,
+      likes: numLikes,
+      commentsCount: comments.comments ? comments.comments.length : 0,
+      comments: comments.comments || [],
+    },
   });
 });

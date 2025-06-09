@@ -8,7 +8,7 @@ const eventSchema = new mongoose.Schema(
     startTime: { type: String, required: [true, "Start Time is required"] },
     endTime: { type: String, required: [true, "End Time is required"] },
     location: { type: String, required: [true, "Location is required"] },
-    images: [{ type: String }],
+    image: { type: String },
     club: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Club",

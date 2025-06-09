@@ -22,6 +22,7 @@ const {
   deleteEvent,
   getEventsByClub,
   getComingSoonEvents,
+  getEventEngagement,
 } = require("../services/eventService");
 
 const {
@@ -44,12 +45,19 @@ router.get(
   getComingSoonEvents
 );
 
+router.get(
+  "/:id/engagement",
+  protect,
+  allowedTo("student", "club_responsible", "system_responsible"),
+  getEventEngagement
+);
+
 router.post(
   "/",
   protect,
   allowedTo("club_responsible", "system_responsible"),
   setUploadFolder("events"),
-  upload.array("images", 5),
+  upload.single("image"),
   setAuthor,
   createEventValidator,
   createEvent
@@ -124,7 +132,7 @@ router.put(
   allowedTo("club_responsible", "system_responsible"),
   restrictToResourceOwner(EventModel, "author"),
   setUploadFolder("events"),
-  upload.array("images", 5), // <-- this line changed
+  upload.single("image"),
   updateEventValidator,
   updateEvent
 );
