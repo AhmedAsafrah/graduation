@@ -108,7 +108,7 @@ router.post(
 
       // Populate author and event fields
       const populatedComment = await CommentModel.findById(comment._id)
-        .populate("author", "name email")
+        .populate("author", "name email profilePicture")
         .populate("event", "title date");
 
       res.status(201).json({

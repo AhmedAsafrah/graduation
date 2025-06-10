@@ -28,6 +28,7 @@ dbConnection();
 
 const app = express();
 
+// const xss = require("xss-clean"); // prevent xss attacks (scripting attacks)
 
 
 // Middleware
@@ -46,6 +47,8 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
   console.log(`mode: ${process.env.NODE_ENV}`);
 }
+
+// app.use(xss()); // prevent xss attacks
 
 // Mounting Routes
 app.use("/api/v1/clubs", clubRoute);
