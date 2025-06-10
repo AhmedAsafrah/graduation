@@ -195,24 +195,23 @@ exports.getPostEngagement = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getPostsByClub = async (req, res, next) => {
-  try {
-    const posts = await PostModel.find({ club: req.params.clubId })
-      .populate({
-        path: "comments",
-        populate: {
-          path: "author",
-          select: "name email profilePicture", // or any fields you want
-        },
-      })
-      .exec();
+exports.getPostsByClub = asyncHandler(async (req, res, next) => {
+  const { clubId } = req.params;
 
-    res.status(200).json({
-      status: "success",
-      results: posts.length,
-      data: { posts },
+  // Fetch all posts associated with the specified club, sort by newest first, and populate club and comments.author
+  const posts = await PostModel.find({ club: clubId })
+    .sort({ createdAt: -1 })
+    .populate("club")
+    .populate({
+      path: "comments",
+      populate: {
+        path: "author",
+        select: "_id name profilePicture email", // Add fields as needed
+      },
     });
-  } catch (err) {
-    next(err);
-  }
-};
+
+  res.status(200).json({
+    status: "success",
+    data: posts,
+  });
+});
