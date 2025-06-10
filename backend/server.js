@@ -3,8 +3,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cors = require("cors");
 
-// security 
-
+// security
 
 const clubRoute = require("./routes/clubRoute");
 const userRoute = require("./routes/userRoute");
@@ -30,15 +29,27 @@ const app = express();
 
 // const xss = require("xss-clean"); // prevent xss attacks (scripting attacks)
 
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use(
   cors({
-    origin: ["/^http:\/\/localhost:\d+$/","https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app"],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app",
+      ];
+      // Allow localhost on any port
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /^http:\/\/localhost:\d+$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
