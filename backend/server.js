@@ -35,22 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        "https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app",
-      ];
-      // Allow localhost on any port
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        /^http:\/\/localhost:\d+$/.test(origin)
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    // i want to allow all origins
+    origin: "*",
   })
 );
 
