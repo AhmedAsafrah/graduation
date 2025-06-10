@@ -17,7 +17,6 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  // Upload single image to Cloudinary and get its URL
   let image = "";
   if (req.file) {
     const result = await cloudinary.uploader.upload(req.file.path, {
@@ -33,7 +32,7 @@ exports.createEvent = asyncHandler(async (req, res, next) => {
     startTime,
     endTime,
     location,
-    image, // single Cloudinary URL
+    image,
     club,
     author,
   });
@@ -68,7 +67,6 @@ exports.getAllEvents = asyncHandler(async (req, res, next) => {
       populate: { path: "author", select: "name email" },
     });
 
-  // Map comments to include author info in a 'description' field
   const eventsWithCommentDescriptions = events.map((event) => {
     const eventObj = event.toObject();
     eventObj.comments = eventObj.comments.map((comment) => {
@@ -115,13 +113,11 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     author,
   } = req.body;
 
-  // Fetch the existing event to get the old image URL
   const event = await EventModel.findById(req.params.id);
   if (!event) {
     return next(new Error("No event found with that ID"));
   }
 
-  // Prepare the update data
   const updateData = {
     title,
     description,
@@ -133,7 +129,6 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     author,
   };
 
-  // Helper to extract public_id from Cloudinary URL
   const getPublicIdFromUrl = (url) => {
     if (!url) return null;
     const parts = url.split("/");
@@ -142,7 +137,6 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     return `${folder}/${fileName}`;
   };
 
-  // Remove image if requested
   if (req.body.image === "") {
     if (event.image) {
       const oldImagePublicId = getPublicIdFromUrl(event.image);
@@ -155,9 +149,7 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     updateData.image = "";
   }
 
-  // Handle new image upload (replace old image)
   if (req.file) {
-    // Remove old image first
     if (event.image) {
       const oldImagePublicId = getPublicIdFromUrl(event.image);
       if (oldImagePublicId) {
@@ -172,7 +164,6 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
     updateData.image = result.secure_url;
   }
 
-  // Update the event with new data
   const updatedEvent = await EventModel.findByIdAndUpdate(
     req.params.id,
     updateData,

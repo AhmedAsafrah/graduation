@@ -14,7 +14,6 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
       new AppError(`No user found with the id ${req.params.id}`, 404)
     );
   }
-  // Prevent password updates through this endpoint
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
@@ -24,7 +23,6 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // If managedClub is set in the request, set role to club_responsible
   if (req.body.managedClub) {
     req.body.role = "club_responsible";
   }
@@ -32,14 +30,13 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
   Object.assign(document, req.body);
   await document.save();
 
-  // If user is now a club_responsible and has managedClub, add them to club members
   if (
     document.role === "club_responsible" &&
     document.managedClub
   ) {
     await ClubModel.findByIdAndUpdate(
       document.managedClub,
-      { $addToSet: { members: document._id } } // $addToSet prevents duplicates
+      { $addToSet: { members: document._id } } 
     );
   }
 
@@ -47,7 +44,6 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
 });
 
 exports.changeUserPassword = asyncHandler(async (req, res, next) => {
-  // 1) Find the user and include the password field
   const user = await UserModel.findById(req.params.id).select("+password");
   if (!user) {
     return next(
@@ -55,7 +51,6 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // 2) Check if password and passwordConfirm are provided and match
   if (!req.body.password || !req.body.passwordConfirm) {
     return next(new AppError("Password and passwordConfirm are required", 400));
   }
@@ -63,12 +58,10 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
     return next(new AppError("Passwords do not match", 400));
   }
 
-  // 3) Update the password and save (to trigger pre-save hooks)
   user.password = req.body.password;
   user.passwordChangedAt = Date.now();
   await user.save();
 
-  // 4) Respond with success
   res.status(200).json({
     status: "success",
     message: "Password updated successfully",
@@ -81,10 +74,8 @@ exports.deleteUser = factory.deleteOne(UserModel);
 exports.getUser = factory.getOne(UserModel);
 
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
-  // Get all users
   let users = await UserModel.find();
 
-  // Find club_responsible users and populate managedClub
   const populatedUsers = await Promise.all(
     users.map(async (user) => {
       if (user.role === "club_responsible" && user.managedClub) {
@@ -108,7 +99,6 @@ exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
     return next(new AppError("Search query is required", 400));
   }
 
-  // Search for students and club_responsible
   const users = await UserModel.find({
     name: { $regex: query, $options: "i" },
     $or: [{ role: "student" }, { role: "club_responsible" }],
@@ -116,7 +106,6 @@ exports.searchStudentsAndClubs = asyncHandler(async (req, res, next) => {
     "-password -emailVerificationCode -emailVerificationExpires -passwordResetCode -passwordResetExpires -passwordResetVerified -lastPasswordResetRequest"
   );
 
-  // Search for clubs
   const clubs = await ClubModel.find({
     name: { $regex: query, $options: "i" },
   });
@@ -145,3 +134,4 @@ exports.toggleUserActive = asyncHandler(async (req, res, next) => {
     data: user,
   });
 });
+

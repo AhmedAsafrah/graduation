@@ -9,13 +9,11 @@ exports.createRegistration = async (req, res, next) => {
   try {
     const { student, club } = req.body;
 
-    // Check if the student already has a registration for this club
     const existingRegistration = await RegistrationModel.findOne({
       student,
       club,
     });
 
-    // Block if status is "pending" or "approved"
     if (
       existingRegistration &&
       (existingRegistration.status === "pending" ||
@@ -26,11 +24,7 @@ exports.createRegistration = async (req, res, next) => {
       );
     }
 
-    // If rejected, allow re-apply by updating status to "pending"
-    if (
-      existingRegistration &&
-      existingRegistration.status === "rejected"
-    ) {
+    if (existingRegistration && existingRegistration.status === "rejected") {
       existingRegistration.status = "pending";
       await existingRegistration.save();
       return res.status(200).json({
@@ -41,7 +35,6 @@ exports.createRegistration = async (req, res, next) => {
       });
     }
 
-    // If the user is a club_responsible, ensure they aren't registering for their own club
     const user = req.user;
     if (
       user.role === "club_responsible" &&
@@ -79,13 +72,11 @@ exports.approveRegistration = async (req, res, next) => {
       return next(new AppError("Registration not found", 404));
     }
 
-    // Find the club associated with the registration
     const club = await ClubModel.findById(registration.club);
     if (!club) {
       return next(new AppError("Club not found", 404));
     }
 
-    // Check if the logged-in user is the club admin or system_responsible
     const user = req.user;
     const isClubAdmin =
       user.role === "club_responsible" &&
@@ -98,11 +89,9 @@ exports.approveRegistration = async (req, res, next) => {
       );
     }
 
-    // Update the status
     registration.status = status;
     await registration.save();
 
-    // If approved, add student to club's members array (avoid duplicates)
     if (status === "approved") {
       if (!club.members) {
         club.members = [];
@@ -145,13 +134,11 @@ exports.rejectRegistration = async (req, res, next) => {
       return next(new AppError("Registration not found", 404));
     }
 
-    // Find the club associated with the registration
     const club = await ClubModel.findById(registration.club);
     if (!club) {
       return next(new AppError("Club not found", 404));
     }
 
-    // Check if the logged-in user is the club admin or system_responsible
     const user = req.user;
     const isClubAdmin =
       user.role === "club_responsible" &&
@@ -164,7 +151,6 @@ exports.rejectRegistration = async (req, res, next) => {
       );
     }
 
-    // Update the status to rejected
     registration.status = "rejected";
     await registration.save();
 
@@ -184,7 +170,6 @@ exports.leaveClub = async (req, res, next) => {
     const userId = req.user._id;
     const clubId = req.params.clubId;
 
-    // Find the registration
     const registration = await RegistrationModel.findOne({
       student: userId,
       club: clubId,
@@ -195,7 +180,6 @@ exports.leaveClub = async (req, res, next) => {
       return next(new AppError("You are not a member of this club", 404));
     }
 
-    // Remove user from club's members array
     const club = await ClubModel.findById(clubId);
     if (!club) {
       return next(new AppError("Club not found", 404));
@@ -205,7 +189,6 @@ exports.leaveClub = async (req, res, next) => {
     );
     await club.save();
 
-    // Delete the registration
     await RegistrationModel.findByIdAndDelete(registration._id);
 
     res.status(200).json({

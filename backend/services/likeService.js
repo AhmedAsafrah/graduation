@@ -20,7 +20,6 @@ exports.toggleLike = async (req, res, next) => {
 
     const TargetModel = targetType === "event" ? EventModel : PostModel;
 
-    // Check if the like already exists
     const existingLike = await LikeModel.findOne({
       user,
       targetType,
@@ -28,10 +27,8 @@ exports.toggleLike = async (req, res, next) => {
     });
 
     if (existingLike) {
-      // Remove like (toggle off)
       await LikeModel.deleteOne({ _id: existingLike._id });
 
-      // Remove from target's likes array
       const target = await TargetModel.findById(targetId);
       if (target && target.likes) {
         target.likes = target.likes.filter(
@@ -40,7 +37,6 @@ exports.toggleLike = async (req, res, next) => {
         await target.save();
       }
 
-      // Fetch updated likes with user info
       const updatedTarget = await TargetModel.findById(targetId).populate({
         path: "likes",
         populate: {
@@ -58,14 +54,12 @@ exports.toggleLike = async (req, res, next) => {
       });
     }
 
-    // Create like (toggle on)
     const newLike = await LikeModel.create({
       user,
       targetType,
       targetId,
     });
 
-    // Add to target's likes array
     const target = await TargetModel.findById(targetId);
     if (target) {
       if (!target.likes) {
@@ -75,7 +69,6 @@ exports.toggleLike = async (req, res, next) => {
       await target.save();
     }
 
-    // Fetch updated likes with user info
     const updatedTarget = await TargetModel.findById(targetId).populate({
       path: "likes",
       populate: {

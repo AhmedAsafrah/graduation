@@ -2,7 +2,6 @@ const Notification = require("../models/notificationModel");
 const userModel = require("../models/userModel");
 const ClubModel = require("../models/clubModel");
 
-// Get all notifications for a user
 exports.getUserNotifications = async (req, res, next) => {
   try {
     const notifications = await Notification.find({ user: req.user._id }).sort({
@@ -18,7 +17,6 @@ exports.getUserNotifications = async (req, res, next) => {
   }
 };
 
-// Mark a notification as read
 exports.markAsRead = async (req, res, next) => {
   try {
     const notification = await Notification.findByIdAndUpdate(
@@ -47,7 +45,6 @@ exports.createNotification = async (userId, type, data = {}) => {
 
 exports.sendSystemNotification = async (req, res, next) => {
   try {
-    // Only allow system_responsible
     if (req.user.role !== "system_responsible") {
       return res
         .status(403)
@@ -81,7 +78,6 @@ exports.sendSystemNotification = async (req, res, next) => {
 
 exports.sendClubNotification = async (req, res, next) => {
   try {
-    // Only allow club_responsible
     if (req.user.role !== "club_responsible") {
       return res
         .status(403)
@@ -95,14 +91,12 @@ exports.sendClubNotification = async (req, res, next) => {
         .json({ status: "fail", message: "clubId and message are required" });
     }
 
-    // Check if the logged-in user manages this club
     if (!req.user.managedClub || req.user.managedClub.toString() !== clubId) {
       return res
         .status(403)
         .json({ status: "fail", message: "You are not the manager of this club" });
     }
 
-    // Find the club and get its members
     const club = await ClubModel.findById(clubId).populate("members", "_id");
     if (!club) {
       return res
@@ -110,7 +104,6 @@ exports.sendClubNotification = async (req, res, next) => {
         .json({ status: "fail", message: "Club not found" });
     }
 
-    // Send notification to all club members
     const notifications = club.members.map((member) =>
       Notification.create({
         user: member._id,

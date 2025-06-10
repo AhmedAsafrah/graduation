@@ -5,11 +5,9 @@ const LeaderboardModel = require("../models/leaderboardModel");
 const AppError = require("../utils/appError");
 const { createNotification } = require("./notificationService");
 
-// Create Leaderboard with Emails for Top Users
 exports.createLeaderboard = asyncHandler(async (req, res, next) => {
   const { name, description, top1, top2, top3, event } = req.body;
 
-  // Resolve emails to user IDs
   const top1User = top1 ? await UserModel.findOne({ email: top1 }) : null;
   const top2User = top2 ? await UserModel.findOne({ email: top2 }) : null;
   const top3User = top3 ? await UserModel.findOne({ email: top3 }) : null;
@@ -24,7 +22,6 @@ exports.createLeaderboard = asyncHandler(async (req, res, next) => {
     return next(new AppError(`User with email ${top3} not found.`, 400));
   }
 
-  // Create the leaderboard
   const leaderboard = await LeaderboardModel.create({
     name,
     description,

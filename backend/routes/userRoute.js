@@ -56,7 +56,6 @@ router.get(
 router.get(
   "/:id",
   protect,
-  restrictToResourceOwner(UserModel, "_id"),
   getSpecificUserValidator,
   getUser
 );

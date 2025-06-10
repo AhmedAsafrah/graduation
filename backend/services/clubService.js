@@ -50,21 +50,18 @@ exports.createClub = asyncHandler(async (req, res, next) => {
     data: club,
   });
 });
+
 exports.updateClub = asyncHandler(async (req, res, next) => {
   const { name, description, college } = req.body;
 
-  // Fetch the existing club to get old image URLs
   const club = await ClubModel.findById(req.params.id);
   if (!club) {
     return next(new Error("No club found with that ID"));
   }
 
-  // Prepare the update data
   const updateData = { name, description, college };
 
-  // Handle file uploads if present
   if (req.files) {
-    // Function to extract public_id from Cloudinary URL
     const getPublicIdFromUrl = (url) => {
       if (!url) return null;
       const parts = url.split("/");
