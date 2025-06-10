@@ -38,7 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: ["/^http:\/\/localhost:\d+$/","https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app/"],
+    origin: ["/^http:\/\/localhost:\d+$/","https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app"],
     credentials: true,
   })
 );
