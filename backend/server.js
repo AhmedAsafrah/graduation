@@ -3,8 +3,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cors = require("cors");
 
-// security 
-
+// security
 
 const clubRoute = require("./routes/clubRoute");
 const userRoute = require("./routes/userRoute");
@@ -30,15 +29,18 @@ const app = express();
 
 // const xss = require("xss-clean"); // prevent xss attacks (scripting attacks)
 
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use(
   cors({
-    origin: ["/^http:\/\/localhost:\d+$/","https://sweet-sunburst-5cebd8.netlify.app"],
+    origin: [
+      "https://ppu-clubs-git-main-mohammadoqailis-projects.vercel.app",
+      "https://ppu-clubs-zeta.vercel.app",
+      "https://ppu-clubs-git-main-ahmeds-projects-2bc707a9.vercel.app",
+      "https://ppu-clubs-2lat6o14l-ahmeds-projects-2bc707a9.vercel.app",
+    ],
     credentials: true,
   })
 );
