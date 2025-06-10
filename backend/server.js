@@ -35,10 +35,21 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: [
-      "/^http://localhost:d+$/",
-      "https://ppu-clubs-k1frtw0el-mohammadoqailis-projects.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://ppu-clubs-k1frtw0el-mohammadoqailis-projects.vercel.app",
+      ];
+      const localhostRegex = /^http:\/\/localhost:\d+$/;
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        localhostRegex.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
