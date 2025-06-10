@@ -38,7 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: ["/^http:\/\/localhost:\d+$/","https://sweet-sunburst-5cebd8.netlify.app"],
+    origin: ["/^http:\/\/localhost:\d+$/"],
     credentials: true,
   })
 );
