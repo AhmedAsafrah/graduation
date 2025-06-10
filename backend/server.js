@@ -3,8 +3,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cors = require("cors");
 
-// security 
-
+// security
 
 const clubRoute = require("./routes/clubRoute");
 const userRoute = require("./routes/userRoute");
@@ -30,15 +29,16 @@ const app = express();
 
 // const xss = require("xss-clean"); // prevent xss attacks (scripting attacks)
 
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use(
   cors({
-    origin: /^http:\/\/localhost:\d+$/,
+    origin: [
+      "/^http://localhost:d+$/",
+      "https://ppu-clubs-k1frtw0el-mohammadoqailis-projects.vercel.app",
+    ],
     credentials: true,
   })
 );
