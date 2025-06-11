@@ -128,10 +128,12 @@ exports.deleteClub = factory.deleteOne(ClubModel);
 exports.getClub = factory.getOne(ClubModel);
 
 exports.getAllClubs = asyncHandler(async (req, res, next) => {
-  const clubs = await ClubModel.find().populate({
-    path: "members",
-    select: "name email",
-  });
+  const clubs = await ClubModel.find()
+    .sort({ createdAt: -1 }) // Sort by newest first; change field as needed
+    .populate({
+      path: "members",
+      select: "name email",
+    });
   res.status(200).json({
     status: "success",
     results: clubs.length,
